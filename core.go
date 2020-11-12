@@ -17,22 +17,26 @@ const (
 )
 
 type JadeSDK struct {
-	Conf           *Conf
-	Status         JadeSDKStatus
-	AppModules     map[string]ModuleInstance
-	mutex          *sync.Mutex
-	log            *Logger
-	AllowSelfCycle bool
-	Stats          map[string]*Stat
+	Conf                 *Conf
+	Status               JadeSDKStatus
+	WorkerModules        map[string]WorkerModuleInstance
+	AggregatorModules    map[string]AggregatorModuleInstance
+	mutex                *sync.Mutex
+	log                  *Logger
+	AllowSelfCycle       bool
+	Stats                map[string]*Stat
+	AggregativeTaskCache *AggregativeTaskCache
 }
 
 func NewJadeSDK() *JadeSDK {
 	return &JadeSDK{
-		Status:     JadeSDKStatusReady,
-		mutex:      &sync.Mutex{},
-		log:        &Logger{},
-		AppModules: map[string]ModuleInstance{},
-		Stats:      map[string]*Stat{},
+		Status:               JadeSDKStatusReady,
+		mutex:                &sync.Mutex{},
+		log:                  &Logger{},
+		WorkerModules:        map[string]WorkerModuleInstance{},
+		AggregatorModules:    map[string]AggregatorModuleInstance{},
+		Stats:                map[string]*Stat{},
+		AggregativeTaskCache: NewAggregativeTaskCache(),
 	}
 }
 
@@ -52,63 +56,82 @@ func (j *JadeSDK) Unlock() {
 	j.mutex.Unlock()
 }
 
-func (j *JadeSDK) SetModule(moduleName string, inst ModuleInstance) {
-	if moduleName == "" {
-		return
-	}
-	if inst != nil {
-		j.AppModules[moduleName] = inst
-		j.Stats[moduleName] = newStat()
-	} else if _, exists := j.AppModules[moduleName]; exists {
-		delete(j.AppModules, moduleName)
-	}
-}
-
-func (j *JadeSDK) SetWorkerModule(inst ModuleInstance) {
-	j.SetModule("worker", inst)
-}
-func (j *JadeSDK) SetAggregatorModule(inst ModuleInstance) {
-	j.SetModule("aggregator", inst)
-}
-
-func (j *JadeSDK) GetModule(moduleName string) ModuleInstance {
-	if moduleName == "" || len(j.AppModules) == 0 {
+func (j *JadeSDK) GetWorkerModule(moduleName string) WorkerModuleInstance {
+	if moduleName == "" || len(j.WorkerModules) == 0 {
 		return nil
 	}
-	if handler, exists := j.AppModules[moduleName]; exists {
-		return handler
+	if moduleInst, exists := j.WorkerModules[moduleName]; exists {
+		return moduleInst
 	}
 	return nil
 }
-
-func (j *JadeSDK) GetWorkerModule() ModuleInstance {
-	return j.GetModule("worker")
+func (j *JadeSDK) GetDefaultWorkerModule() WorkerModuleInstance {
+	return j.GetWorkerModule(string(AppModuleWorker))
 }
-func (j *JadeSDK) GetAggregatorModule() ModuleInstance {
-	return j.GetModule("aggregator")
+func (j *JadeSDK) SetWorkerModule(moduleName string, inst WorkerModuleInstance) {
+	if inst != nil {
+		j.WorkerModules[moduleName] = inst
+		j.Stats[moduleName] = newStat()
+	} else if _, exists := j.WorkerModules[moduleName]; exists {
+		delete(j.WorkerModules, moduleName)
+	}
+}
+func (j *JadeSDK) SetDefaultWorkerModule(inst WorkerModuleInstance) {
+	j.SetWorkerModule(string(AppModuleWorker), inst)
+}
+func (j *JadeSDK) WorkerModuleExists(moduleName string) bool {
+	if moduleName == "" {
+		return false
+	}
+	if _, e := j.WorkerModules[moduleName]; e {
+		return true
+	}
+	return false
 }
 
-func (j *JadeSDK) GetAggregator() *Interface {
-	if aggModule := j.GetAggregatorModule(); j.Conf.AggregatorNode.IsValid() && aggModule != nil {
-		aggNodeInterface := &Interface{
-			Node:       j.Conf.AggregatorNode,
-			ModuleName: "aggregator",
-		}
-		return aggNodeInterface
+func (j *JadeSDK) GetAggregatorModule(moduleName string) AggregatorModuleInstance {
+	if moduleName == "" || len(j.WorkerModules) == 0 {
+		return nil
+	}
+	if moduleInst, exists := j.AggregatorModules[moduleName]; exists {
+		return moduleInst
 	}
 	return nil
 }
-func (j *JadeSDK) GetSelfInterfaceOfModule(moduleName string) *Interface {
-	if m := j.GetModule(moduleName); j.Conf.SelfNode.IsValid() && m != nil {
-		i := &Interface{
+func (j *JadeSDK) GetDefaultAggregatorModule() AggregatorModuleInstance {
+	return j.GetAggregatorModule(string(AppModuleAggregator))
+}
+func (j *JadeSDK) SetAggregatorModule(moduleName string, inst AggregatorModuleInstance) {
+	if inst != nil {
+		j.AggregatorModules[moduleName] = inst
+		j.Stats[moduleName] = newStat()
+	} else if _, exists := j.AggregatorModules[moduleName]; exists {
+		delete(j.AggregatorModules, moduleName)
+	}
+}
+func (j *JadeSDK) SetDefaultAggregatorModule(inst AggregatorModuleInstance) {
+	j.SetAggregatorModule(string(AppModuleAggregator), inst)
+}
+func (j *JadeSDK) AggregatorModuleExists(moduleName string) bool {
+	if moduleName == "" {
+		return false
+	}
+	if _, e := j.AggregatorModules[moduleName]; e {
+		return true
+	}
+	return false
+}
+
+func (j *JadeSDK) GetSelfInterface(moduleName string) *Interface {
+	if j.Conf.SelfNode.IsValid() {
+		return &Interface{
 			Node:       j.Conf.SelfNode,
 			ModuleName: moduleName,
 		}
-		return i
 	}
 	return nil
 }
 
 func (j *JadeSDK) ModuleCount() int {
-	return len(j.AppModules)
+	return len(j.WorkerModules) + len(j.AggregatorModules)
 }

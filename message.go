@@ -14,6 +14,13 @@ type Request struct {
 	Payload interface{}  `json:"payload,omitempty"`
 }
 
+// AggregatorEnqueuingMessage message of enqueuing a task
+type AggregatorEnqueuingMessage struct {
+	TaskKey  string       `json:"taskId,omitempty"`
+	Subtasks []string     `json:"subtasks,omitempty"`
+	ReportTo []*Interface `json:"reportTo,omitempty"`
+}
+
 // Response message respond to the request
 type Response struct {
 	Status  string      `json:"status,omitempty"`

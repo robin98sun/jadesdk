@@ -15,29 +15,52 @@ import (
 
 func (j *JadeSDK) createAppRoutes() []*rest.Route {
 	routes := []*rest.Route{}
-	for appModuleName, appModuleInst := range j.AppModules {
+
+	for appModuleName, appModuleInst := range j.AggregatorModules {
 		if appModuleInst == nil {
 			continue
 		}
 		path := strings.ReplaceAll(appModuleName, " ", "-")
 		path = "/" + path
-		routes = append(routes, rest.Post(path, j.createHTTPHandler(appModuleName, appModuleInst)))
+		routes = append(routes, rest.Post(path, j.createHTTPHandler(appModuleName, appModuleInst, AppModuleAggregator)))
 	}
+
+	for appModuleName, appModuleInst := range j.WorkerModules {
+		if appModuleInst == nil {
+			continue
+		}
+		path := strings.ReplaceAll(appModuleName, " ", "-")
+		path = "/" + path
+		routes = append(routes, rest.Post(path, j.createHTTPHandler(appModuleName, appModuleInst, AppModuleWorker)))
+	}
+
 	return routes
 }
 
-func (j *JadeSDK) createHTTPHandler(moduleName string, module ModuleInstance) func(w rest.ResponseWriter, r *rest.Request) {
+func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, moduleType AppModule) func(w rest.ResponseWriter, r *rest.Request) {
 	httpHandler := func(w rest.ResponseWriter, r *rest.Request) {
 		timeArrive := time.Now()
-		input := module.NewInput()
-		req, err := decodeRequest(moduleName, input, r)
+		var req *Request
+		var err error
+		var input interface{}
+		if moduleType == AppModuleWorker {
+			workerInput := moduleInst.(WorkerModuleInstance).ShapeInput()
+			req, err = decodeRequest(moduleName, workerInput, r)
+			input = workerInput
+		} else if moduleType == AppModuleAggregator {
+			aggregatorInput := moduleInst.(AggregatorModuleInstance).ShapeResultOfSubtask()
+			req, err = decodeRequest(moduleName, aggregatorInput, r)
+			input = aggregatorInput
+		}
+
 		if err != nil {
 			j.log.Println(err.Error())
 			w.WriteJson(newErrorResponse(err.Error()))
 			return
 		}
-		if !j.AllowSelfCycle && req.From != nil && req.From.Equal(j.GetSelfInterfaceOfModule(moduleName)) {
-			w.WriteJson(newErrorResponse("self-cycle is not allowed"))
+		if !j.AllowSelfCycle && req.From != nil &&
+			j.WorkerModuleExists(moduleName) && req.From.Equal(j.GetSelfInterface(moduleName)) {
+			w.WriteJson(newErrorResponse("self-cycle is not allowed"))
 			return
 		}
 		w.WriteJson(newSuccessResponse("received"))
@@ -45,10 +68,26 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, module ModuleInstance) fu
 		j.Stats[moduleName].Decoding.AddDuration(timeDecoded.Sub(timeArrive))
 		// process the task
 		taskThread := func() {
-			result, err := module.Handler(input)
+			var result interface{}
+			var err error
+			if moduleType == AppModuleWorker {
+				result, err = moduleInst.(WorkerModuleInstance).Handler(input)
+			} else if moduleType == AppModuleAggregator &&
+				!j.AggregativeTaskCache.DoesSubtaskExists(req.Task.TaskID, req.Task.SubtaskID) {
+				cumulation, previousResults := j.AggregativeTaskCache.GetCumulation(req.Task.TaskID)
+				result, err = moduleInst.(AggregatorModuleInstance).Handler(cumulation, previousResults, input)
+				j.AggregativeTaskCache.SetSubtaskResult(req.Task.TaskID, req.Task.SubtaskID, input)
+				j.AggregativeTaskCache.SetCumulation(req.Task.TaskID, result)
+			} else {
+				return
+			}
 			timeExecuted := time.Now()
-			j.Stats[moduleName].Task.AddDuration(timeExecuted.Sub(timeDecoded))
-			j.log.Println(fmt.Sprintf("[%v] done", moduleName))
+			executionDuration := timeExecuted.Sub(timeDecoded)
+			j.Stats[moduleName].Task.AddDuration(executionDuration)
+			j.log.Println(fmt.Sprintf("[%v] done in %v microseconds", moduleName, executionDuration))
+			if moduleType == AppModuleAggregator && !j.AggregativeTaskCache.IsTaskDone(req.Task.TaskID) {
+				return
+			}
 			if err != nil {
 				errMsg := fmt.Sprintf("[%v] error when processing request: %v", moduleName, err.Error())
 				j.log.Println(errMsg)
@@ -63,28 +102,12 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, module ModuleInstance) fu
 				timePoint := time.Now()
 				if len(req.To) > 0 {
 					j.log.Println(fmt.Sprintf("[%v] forwarding to next hop (%v modules)", moduleName, len(req.To)))
-					errorCache = j.sendMessages(req.Task, j.GetSelfInterfaceOfModule(moduleName), req.To, result)
-					j.log.Println(fmt.Sprintf("[%v] forward to next hop completed", moduleName))
+					errorCache = j.sendMessages(req.Task, j.GetSelfInterface(moduleName), req.To, result)
 					timeForwarded := time.Now()
-					j.Stats[moduleName].Forwarding.AddDuration(timeForwarded.Sub(timePoint))
+					forwardingDuration := timeForwarded.Sub(timePoint)
+					j.Stats[moduleName].Forwarding.AddDuration(forwardingDuration)
+					j.log.Println(fmt.Sprintf("[%v] forward to next hop completed in %v microseconds", moduleName, forwardingDuration))
 					timePoint = timeForwarded
-				}
-				// send message to aggregator
-				if aggNodeInterface := j.GetAggregator(); aggNodeInterface != nil {
-					j.log.Println(fmt.Sprintf("[%v] forwarding to the aggregator", moduleName))
-					to := []*Interface{aggNodeInterface}
-					aggErrCache := j.sendMessages(req.Task, j.GetSelfInterfaceOfModule(moduleName), to, result)
-					if aggErrCache != nil && errorCache != nil {
-						for key, value := range aggErrCache {
-							errorCache[key] = value
-						}
-					} else if aggErrCache != nil {
-						errorCache = aggErrCache
-					}
-					timeReportedToAgg := time.Now()
-					j.Stats[moduleName].ReportToAggregater.AddDuration(timeReportedToAgg.Sub(timePoint))
-					timePoint = timeReportedToAgg
-					j.log.Println(fmt.Sprintf("[%v] forward to the aggregator completed", moduleName))
 				}
 				// report to master
 				if j.Conf.MasterNode.IsValid() {
@@ -107,9 +130,10 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, module ModuleInstance) fu
 						}, true)
 					}
 					timeReportedToMaster := time.Now()
-					j.Stats[moduleName].ReportToMaster.AddDuration(timeReportedToMaster.Sub(timePoint))
+					reportingDuration := timeReportedToMaster.Sub(timePoint)
+					j.Stats[moduleName].ReportToMaster.AddDuration(reportingDuration)
 					timePoint = timeReportedToMaster
-					j.log.Println(fmt.Sprintf("[%v] report to the master completed", moduleName))
+					j.log.Println(fmt.Sprintf("[%v] report to the master completed in %v microseconds", moduleName, reportingDuration))
 				}
 			}
 		}

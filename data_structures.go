@@ -4,12 +4,18 @@ import (
 	"fmt"
 )
 
-type ModuleInstance interface {
+type WorkerHandler func([]byte) (interface{}, error)
+type WorkerModuleInstance interface {
 	Handler(interface{}) (interface{}, error)
-	NewInput() interface{}
+	ShapeInput() interface{}
 }
 
-type Handler func([]byte) (interface{}, error)
+type AggregatorHandler func(cumulation []byte, resultsOfPreviousSubtasks []byte, resultOfCurrentSubtask []byte) (interface{}, error)
+type AggregatorModuleInstance interface {
+	ShapeResultOfSubtask() interface{}
+	ShapeCumulation() interface{}
+	Handler(cumulation interface{}, resultsOfPreviousSubtasks []interface{}, resultOfCurrentSubtask interface{}) (interface{}, error)
+}
 
 type Task struct {
 	ModuleName string `json:"moduleName,omitempty"`
@@ -67,3 +73,10 @@ func (n *Node) Equal(m *Node) bool {
 	}
 	return false
 }
+
+type AppModule string
+
+const (
+	AppModuleAggregator AppModule = "aggregator"
+	AppModuleWorker               = "worker"
+)

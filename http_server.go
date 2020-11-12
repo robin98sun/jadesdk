@@ -32,7 +32,9 @@ func (j *JadeSDK) CreateHTTPServer() {
 
 	routes := []*rest.Route{}
 	// JADE API
-	routes = append(routes, j.createJadeRoutes()...)
+	routes = append(routes, j.createJadeInterfaces()...)
+	// Queuing API
+	routes = append(routes, j.createQueuingInterfaces()...)
 	// Application API
 	routes = append(routes, j.createAppRoutes()...)
 

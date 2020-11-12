@@ -55,19 +55,17 @@ func (s *UnitStat) AddDuration(duration time.Duration) {
 }
 
 type Stat struct {
-	Decoding           *UnitStat
-	Task               *UnitStat
-	Forwarding         *UnitStat
-	ReportToMaster     *UnitStat
-	ReportToAggregater *UnitStat
+	Decoding       *UnitStat
+	Task           *UnitStat
+	Forwarding     *UnitStat
+	ReportToMaster *UnitStat
 }
 
 func newStat() *Stat {
 	return &Stat{
-		Decoding:           newUnitStat(),
-		Task:               newUnitStat(),
-		Forwarding:         newUnitStat(),
-		ReportToAggregater: newUnitStat(),
-		ReportToMaster:     newUnitStat(),
+		Decoding:       newUnitStat(),
+		Task:           newUnitStat(),
+		Forwarding:     newUnitStat(),
+		ReportToMaster: newUnitStat(),
 	}
 }

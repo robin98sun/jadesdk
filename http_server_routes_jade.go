@@ -12,7 +12,7 @@ import (
 	// "strings"
 )
 
-func (j *JadeSDK) createJadeRoutes() []*rest.Route {
+func (j *JadeSDK) createJadeInterfaces() []*rest.Route {
 	routes := []*rest.Route{
 		rest.Put("/$jade$/config", func(w rest.ResponseWriter, r *rest.Request) {
 			conf := &Conf{}
