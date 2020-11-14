@@ -23,12 +23,12 @@ func (j *JadeSDK) CreateHTTPServer() {
 	addr := *addrArg
 	// Read Env configurations
 	j.ReadConfFromEnv()
-	if j.Conf.SelfNode.Addr != "" {
-		addr = j.Conf.SelfNode.Addr
-	}
-	if j.Conf.SelfNode.Port != 0 {
-		port = j.Conf.SelfNode.Port
-	}
+	// if j.Conf.SelfNode.Addr != "" {
+	// 	addr = j.Conf.SelfNode.Addr
+	// }
+	// if j.Conf.SelfNode.Port != 0 {
+	// 	port = j.Conf.SelfNode.Port
+	// }
 
 	routes := []*rest.Route{}
 	// JADE API

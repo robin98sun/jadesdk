@@ -57,6 +57,21 @@ func (n *Node) Key() string {
 	return fmt.Sprintf("%v:%v", n.Addr, n.Port)
 }
 
+func (n *Node) Merge(newNode *Node) {
+	if n == nil || newNode == nil {
+		return
+	}
+	if newNode.Addr != "" {
+		n.Addr = newNode.Addr
+	}
+	if newNode.Port != 0 {
+		n.Port = newNode.Port
+	}
+	if newNode.Protocol != "" {
+		n.Protocol = newNode.Protocol
+	}
+}
+
 func (n *Node) IsValid() bool {
 	return n != nil && n.Addr != "" && n.Port > 0
 }

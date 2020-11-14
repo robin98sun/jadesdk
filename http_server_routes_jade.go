@@ -22,7 +22,11 @@ func (j *JadeSDK) createJadeInterfaces() []*rest.Route {
 				return
 			}
 			j.Lock()
-			j.Conf = conf
+			if j.Conf == nil {
+				j.Conf = conf
+			} else {
+				j.Conf.Merge(conf)
+			}
 			j.Unlock()
 			w.WriteJson(newSuccessResponse(j.Status))
 		}),
@@ -31,6 +35,9 @@ func (j *JadeSDK) createJadeInterfaces() []*rest.Route {
 		}),
 		rest.Get("/$jade$/status", func(w rest.ResponseWriter, r *rest.Request) {
 			w.WriteJson(newSuccessResponse(j.Status))
+		}),
+		rest.Get("/$jade$/taskCache", func(w rest.ResponseWriter, r *rest.Request) {
+			w.WriteJson(newSuccessResponse(j.AggregativeTaskCache))
 		}),
 		rest.Get("/$jade$/stat", func(w rest.ResponseWriter, r *rest.Request) {
 			// TODO

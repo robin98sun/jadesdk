@@ -1,14 +1,9 @@
 package jadesdk
 
 import (
-	// RESTful Server
-	"github.com/ant0ine/go-json-rest/rest"
-	// "net/http"
-	// others
-	// "encoding/json"
-	// "flag"
+	"errors"
 	"fmt"
-	// "strconv"
+	"github.com/ant0ine/go-json-rest/rest"
 	"strings"
 	"time"
 )
@@ -72,24 +67,50 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 			var err error
 			if moduleType == AppModuleWorker {
 				result, err = moduleInst.(WorkerModuleInstance).Handler(input)
-			} else if moduleType == AppModuleAggregator &&
-				!j.AggregativeTaskCache.DoesSubtaskExists(req.Task.TaskID, req.Task.SubtaskID) {
-				cumulation, previousResults := j.AggregativeTaskCache.GetCumulation(req.Task.TaskID)
-				result, err = moduleInst.(AggregatorModuleInstance).Handler(cumulation, previousResults, input)
-				j.AggregativeTaskCache.SetSubtaskResult(req.Task.TaskID, req.Task.SubtaskID, input)
-				j.AggregativeTaskCache.SetCumulation(req.Task.TaskID, result)
-			} else {
-				return
+			} else if moduleType == AppModuleAggregator {
+				j.log.Printf("checking subtask[%v] of task[%v] in cache", req.Task.SubtaskID, req.Task.TaskID)
+				if j.AggregativeTaskCache.DoesSubtaskExist(req.Task.TaskID, req.Task.SubtaskID) {
+					j.log.Printf("received the result of subtask [%v] of task[%v]", req.Task.SubtaskID, req.Task.TaskID)
+					cumulation, previousResults := j.AggregativeTaskCache.GetCumulation(req.Task.TaskID)
+					j.log.Printf("for subtask [%v] of task[%v], cumulation: %v, with {%v} previous results", req.Task.SubtaskID, req.Task.TaskID, cumulation, len(previousResults))
+					j.AggregativeTaskCache.SetSubtaskResult(req.Task.TaskID, req.Task.SubtaskID, input)
+					j.log.Printf("saved result of subtask [%v] of task[%v]", req.Task.SubtaskID, req.Task.TaskID)
+					TryCatchBlock{
+						Try: func() {
+							result, err = moduleInst.(AggregatorModuleInstance).Handler(cumulation, previousResults, input)
+						},
+						Catch: func(e Exception) {
+							errMsg := fmt.Sprintf(
+								"Application crashed when executing module[%v] on subtask[%v] of task[%v]: %v",
+								moduleName, req.Task.SubtaskID, req.Task.TaskID,
+								e,
+							)
+							err = errors.New(errMsg)
+							j.log.Printf("ERROR: %v", errMsg)
+						},
+					}.Do()
+
+					j.log.Printf("[%v] executed aggregator for subtask[%v] of task[%v], err: %v", moduleName, req.Task.SubtaskID, req.Task.TaskID, err)
+					if err == nil {
+						j.AggregativeTaskCache.SetCumulation(req.Task.TaskID, result)
+					}
+				} else {
+					j.log.Printf("[%v] ERROR: subtask [%v] of task[%v] does not exist", moduleName, req.Task.SubtaskID, req.Task.TaskID)
+					return
+				}
 			}
 			timeExecuted := time.Now()
 			executionDuration := timeExecuted.Sub(timeDecoded)
 			j.Stats[moduleName].Task.AddDuration(executionDuration)
-			j.log.Println(fmt.Sprintf("[%v] done in %v microseconds", moduleName, executionDuration))
+			j.log.Println(fmt.Sprintf("[%v] done in %v microseconds", moduleName, executionDuration/time.Microsecond))
 			if moduleType == AppModuleAggregator && !j.AggregativeTaskCache.IsTaskDone(req.Task.TaskID) {
+				j.log.Printf("[%v] still waiting for more subtasks of task[%v]", moduleName, req.Task.TaskID)
 				return
+			} else if moduleType == AppModuleAggregator {
+				j.log.Printf("[%v] all subtasks of task[%v] is done", moduleName, req.Task.TaskID)
 			}
 			if err != nil {
-				errMsg := fmt.Sprintf("[%v] error when processing request: %v", moduleName, err.Error())
+				errMsg := fmt.Sprintf("[%v] error when processing result of subtask[%v], ERROR: %v", moduleName, req.Task.SubtaskID, err.Error())
 				j.log.Println(errMsg)
 				j.reportToMaster(req.Task, &Response{
 					Error: errMsg,
@@ -100,15 +121,27 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 				// send messages to next hop
 				var errorCache map[string]error
 				timePoint := time.Now()
+				var reportTo []*Interface
+				// report to upper tier aggregators
+				if moduleType == AppModuleAggregator {
+					reportTo = j.AggregativeTaskCache.GetReportTo(req.Task.TaskID)
+				}
 				if len(req.To) > 0 {
-					j.log.Println(fmt.Sprintf("[%v] forwarding to next hop (%v modules)", moduleName, len(req.To)))
-					errorCache = j.sendMessages(req.Task, j.GetSelfInterface(moduleName), req.To, result)
+					reportTo = append(reportTo, req.To...)
+				}
+				if len(reportTo) > 0 {
+					j.log.Println(fmt.Sprintf("[%v] forwarding to next hop (%v nodes)", moduleName, len(req.To)))
+					if moduleType == AppModuleAggregator {
+						req.Task.SubtaskID = j.AggregativeTaskCache.GetAggregatorSubtaskKey(req.Task.TaskID)
+					}
+					errorCache = j.sendMessages(req.Task, j.GetSelfInterface(moduleName), reportTo, result)
 					timeForwarded := time.Now()
 					forwardingDuration := timeForwarded.Sub(timePoint)
 					j.Stats[moduleName].Forwarding.AddDuration(forwardingDuration)
-					j.log.Println(fmt.Sprintf("[%v] forward to next hop completed in %v microseconds", moduleName, forwardingDuration))
+					j.log.Println(fmt.Sprintf("[%v] forward to next hop completed in %v microseconds", moduleName, forwardingDuration/time.Microsecond))
 					timePoint = timeForwarded
 				}
+
 				// report to master
 				if j.Conf.MasterNode.IsValid() {
 					j.log.Println(fmt.Sprintf("[%v] reporting to the master", moduleName))
@@ -133,8 +166,12 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 					reportingDuration := timeReportedToMaster.Sub(timePoint)
 					j.Stats[moduleName].ReportToMaster.AddDuration(reportingDuration)
 					timePoint = timeReportedToMaster
-					j.log.Println(fmt.Sprintf("[%v] report to the master completed in %v microseconds", moduleName, reportingDuration))
+					j.log.Println(fmt.Sprintf("[%v] report to the master completed in %v microseconds", moduleName, reportingDuration/time.Microsecond))
 				}
+			}
+			// clear the task cache
+			if moduleType == AppModuleAggregator && j.AggregativeTaskCache.IsTaskDone(req.Task.TaskID) {
+				j.AggregativeTaskCache.CleanTask(req.Task.TaskID)
 			}
 		}
 		go taskThread()

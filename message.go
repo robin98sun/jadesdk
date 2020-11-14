@@ -16,9 +16,10 @@ type Request struct {
 
 // AggregatorEnqueuingMessage message of enqueuing a task
 type AggregatorEnqueuingMessage struct {
-	TaskKey  string       `json:"taskId,omitempty"`
-	Subtasks []string     `json:"subtasks,omitempty"`
-	ReportTo []*Interface `json:"reportTo,omitempty"`
+	TaskKey    string       `json:"taskId,omitempty"`
+	SubtaskKey string       `json:"subtaskId,omitempty"`
+	Subtasks   []string     `json:"subtasks,omitempty"`
+	ReportTo   []*Interface `json:"reportTo,omitempty"`
 }
 
 // Response message respond to the request
@@ -55,7 +56,7 @@ func (j *JadeSDK) sendMessages(task *Task, from *Interface, to []*Interface, mes
 				From:    from,
 				Payload: message,
 			},
-			0, 0)
+			0, 30)
 		if err != nil {
 			errorCache[i.Key()] = err
 			j.log.Println("error when sending message sent to "+i.Key(), err.Error())

@@ -1,43 +1,61 @@
 package jadesdk
 
+import (
+	"sync"
+)
+
 type AggregativeTaskCache struct {
 	Cache map[string]*AggregativeTaskCacheItem // taskId: taskQueueItem
+	mutex *sync.Mutex
 }
 
 func NewAggregativeTaskCache() *AggregativeTaskCache {
 	inst := &AggregativeTaskCache{
 		Cache: make(map[string]*AggregativeTaskCacheItem),
+		mutex: &sync.Mutex{},
 	}
 	return inst
 }
 
+func (q *AggregativeTaskCache) Lock() {
+	q.mutex.Lock()
+}
+func (q *AggregativeTaskCache) Unlock() {
+	q.mutex.Unlock()
+}
+
 type AggregativeTaskCacheItem struct {
 	Subtasks   map[string]*AggregativeTaskCacheSubtaskItem // subtaskId: subtaskItem
-	Cumulation interface{}                                 // cumulative result of so far responded subtasks
+	Cumulation interface{}                                 // cumulative Result of so far responded subtasks
 	ReportTo   []*Interface                                // upper layer aggregators
+	SubtaskKey string                                      // the id of the aggregator subtask
 }
 
 type AggregativeTaskCacheSubtaskItem struct {
 	SubtaskKey string
-	result     interface{}
+	Result     interface{}
 }
 
 func (q *AggregativeTaskCache) EnqueueAggregativeTask(msg *AggregatorEnqueuingMessage) {
 	if q == nil || msg == nil || msg.TaskKey == "" || len(msg.Subtasks) == 0 {
 		return
 	}
-	if q.Cache == nil {
+	q.Lock()
+	defer q.Unlock()
+	if q.Cache == nil || len(q.Cache) == 0 {
 		q.Cache = make(map[string]*AggregativeTaskCacheItem)
 	}
 	if _, e := q.Cache[msg.TaskKey]; !e {
 		q.Cache[msg.TaskKey] = &AggregativeTaskCacheItem{
-			Subtasks: make(map[string]*AggregativeTaskCacheSubtaskItem),
-			ReportTo: msg.ReportTo,
+			Subtasks:   make(map[string]*AggregativeTaskCacheSubtaskItem),
+			ReportTo:   msg.ReportTo,
+			SubtaskKey: msg.SubtaskKey,
 		}
 	}
 	for _, subtaskKey := range msg.Subtasks {
 		q.Cache[msg.TaskKey].Subtasks[subtaskKey] = &AggregativeTaskCacheSubtaskItem{
 			SubtaskKey: subtaskKey,
+			Result:     nil,
 		}
 	}
 }
@@ -46,13 +64,15 @@ func (q *AggregativeTaskCache) IsTaskDone(taskKey string) bool {
 	if q == nil || len(q.Cache) == 0 {
 		return false
 	}
+	q.Lock()
+	defer q.Unlock()
 	if cacheItem, e := q.Cache[taskKey]; !e {
 		return false
 	} else if len(cacheItem.Subtasks) == 0 {
 		return false
 	} else {
 		for _, subtaskItem := range cacheItem.Subtasks {
-			if subtaskItem.result == nil {
+			if subtaskItem.Result == nil {
 				return false
 			}
 		}
@@ -60,10 +80,12 @@ func (q *AggregativeTaskCache) IsTaskDone(taskKey string) bool {
 	return true
 }
 
-func (q *AggregativeTaskCache) DoesSubtaskExists(taskKey string, subtaskKey string) bool {
+func (q *AggregativeTaskCache) DoesSubtaskExist(taskKey string, subtaskKey string) bool {
 	if q == nil || len(q.Cache) == 0 {
 		return false
 	}
+	q.Lock()
+	defer q.Unlock()
 	if cacheItem, e := q.Cache[taskKey]; e {
 		if len(cacheItem.Subtasks) == 0 {
 			return false
@@ -72,6 +94,7 @@ func (q *AggregativeTaskCache) DoesSubtaskExists(taskKey string, subtaskKey stri
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -79,20 +102,24 @@ func (q *AggregativeTaskCache) GetCumulation(taskKey string) (interface{}, []int
 	if q == nil || len(q.Cache) == 0 {
 		return nil, nil
 	}
+	q.Lock()
+	defer q.Unlock()
 	if cacheItem, e := q.Cache[taskKey]; e {
-		return cacheItem.Cumulation, q.GetResultsOfCompletedSubtasks(taskKey)
+		return cacheItem.Cumulation, q.getResultsOfCompletedSubtasks(taskKey)
 	}
 	return nil, nil
 }
 
-func (q *AggregativeTaskCache) GetResultsOfCompletedSubtasks(taskKey string) []interface{} {
+func (q *AggregativeTaskCache) getResultsOfCompletedSubtasks(taskKey string) []interface{} {
 	if q == nil || len(q.Cache) == 0 {
 		return nil
 	}
 	if cacheItem, e := q.Cache[taskKey]; e {
 		result := []interface{}{}
 		for _, subtaskItem := range cacheItem.Subtasks {
-			result = append(result, subtaskItem.result)
+			if subtaskItem.Result != nil {
+				result = append(result, subtaskItem.Result)
+			}
 		}
 		return result
 	}
@@ -103,9 +130,11 @@ func (q *AggregativeTaskCache) SetSubtaskResult(taskKey string, subtaskKey strin
 	if q == nil || len(q.Cache) == 0 {
 		return
 	}
+	q.Lock()
+	defer q.Unlock()
 	if cacheItem, e := q.Cache[taskKey]; e {
 		if subtaskItem, e := cacheItem.Subtasks[subtaskKey]; e {
-			subtaskItem.result = result
+			subtaskItem.Result = result
 		}
 	}
 }
@@ -114,7 +143,44 @@ func (q *AggregativeTaskCache) SetCumulation(taskKey string, cumulation interfac
 	if q == nil || len(q.Cache) == 0 {
 		return
 	}
+	q.Lock()
+	defer q.Unlock()
 	if cacheItem, e := q.Cache[taskKey]; e {
 		cacheItem.Cumulation = cumulation
 	}
+}
+
+func (q *AggregativeTaskCache) CleanTask(taskKey string) {
+	if q == nil || len(q.Cache) == 0 {
+		return
+	}
+	q.Lock()
+	defer q.Unlock()
+	if _, e := q.Cache[taskKey]; e {
+		delete(q.Cache, taskKey)
+	}
+}
+
+func (q *AggregativeTaskCache) GetAggregatorSubtaskKey(taskKey string) string {
+	if q == nil || len(q.Cache) == 0 {
+		return ""
+	}
+	q.Lock()
+	defer q.Unlock()
+	if taskItem, e := q.Cache[taskKey]; e {
+		return taskItem.SubtaskKey
+	}
+	return ""
+}
+
+func (q *AggregativeTaskCache) GetReportTo(taskKey string) []*Interface {
+	if q == nil || len(q.Cache) == 0 {
+		return nil
+	}
+	q.Lock()
+	defer q.Unlock()
+	if taskItem, e := q.Cache[taskKey]; e {
+		return taskItem.ReportTo
+	}
+	return nil
 }
