@@ -11,11 +11,12 @@ type VideoStream struct {
 }
 
 type Conf struct {
-	SelfNode   *Node
-	MasterNode *Node  // to report the completion of sub-task
-	AppModule  string `json:"appModule,omitempty"`
-	AppName    string `json:"appName,omitempty"`
-	AppVersion string `json:"appVersion,omitempty"`
+	SelfNode     *Node
+	MasterNode   *Node         // to report the completion of sub-task
+	AppModule    string        `json:"appModule,omitempty"`
+	AppName      string        `json:"appName,omitempty"`
+	AppVersion   string        `json:"appVersion,omitempty"`
+	Capabilities []*Capability `json:"capabilities,omitempty"`
 }
 
 // ReadConfFromEnv Read configuration from environment variables
@@ -33,6 +34,7 @@ func (j *JadeSDK) ReadConfFromEnv() *Conf {
 	conf.AppName = os.Getenv("JADE_APP_NAME")
 	conf.AppModule = os.Getenv("JADE_APP_MODULE")
 	conf.AppVersion = os.Getenv("JADE_APP_VERSION")
+	conf.Capabilities = ReadCapabilitiesFromEnv()
 	j.Conf = conf
 	return conf
 }
@@ -68,5 +70,8 @@ func (c *Conf) Merge(newConf *Conf) {
 	}
 	if newConf.AppVersion != "" {
 		c.AppVersion = newConf.AppVersion
+	}
+	if len(newConf.Capabilities) != 0 {
+		c.Capabilities = newConf.Capabilities
 	}
 }

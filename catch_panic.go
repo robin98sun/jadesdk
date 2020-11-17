@@ -1,3 +1,4 @@
+// ref: https://dzone.com/articles/try-and-catch-in-golang
 package jadesdk
 
 type Exception interface{}
