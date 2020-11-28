@@ -38,6 +38,7 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 		var req *Request
 		var err error
 		var input interface{}
+		var statItem *StatItem = &StatItem{}
 		if moduleType == AppModuleWorker {
 			workerInput := moduleInst.(WorkerModuleInstance).ShapeInput()
 			req, err = decodeRequest(moduleName, workerInput, r)
@@ -60,7 +61,9 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 		}
 		w.WriteJson(newSuccessResponse("received"))
 		timeDecoded := time.Now()
-		j.Stats[moduleName].Decoding.AddDuration(timeDecoded.Sub(timeArrive))
+		dur := timeDecoded.Sub(timeArrive)
+		j.Stats[moduleName].Decoding.AddDuration(dur)
+		statItem.Decoding = dur / time.Millisecond
 		// process the task
 		taskThread := func() {
 			var result interface{}
@@ -102,7 +105,8 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 			timeExecuted := time.Now()
 			executionDuration := timeExecuted.Sub(timeDecoded)
 			j.Stats[moduleName].Task.AddDuration(executionDuration)
-			j.log.Println(fmt.Sprintf("[%v] done in %v microseconds", moduleName, executionDuration/time.Microsecond))
+			statItem.Task = executionDuration
+			j.log.Println(fmt.Sprintf("[%v] done in %v milliseconds", moduleName, executionDuration/time.Millisecond))
 			if moduleType == AppModuleAggregator && !j.AggregativeTaskCache.IsTaskDone(req.Task.TaskID) {
 				j.log.Printf("[%v] still waiting for more subtasks of task[%v]", moduleName, req.Task.TaskID)
 				return
@@ -114,7 +118,7 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 				j.log.Println(errMsg)
 				j.reportToMaster(req.Task, &Response{
 					Error: errMsg,
-				}, false)
+				}, false, statItem)
 				timeReportedToMasterAboutError := time.Now()
 				j.Stats[moduleName].ReportToMaster.AddDuration(timeReportedToMasterAboutError.Sub(timeExecuted))
 			} else {
@@ -138,18 +142,19 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 					timeForwarded := time.Now()
 					forwardingDuration := timeForwarded.Sub(timePoint)
 					j.Stats[moduleName].Forwarding.AddDuration(forwardingDuration)
-					j.log.Println(fmt.Sprintf("[%v] forward to next hop completed in %v microseconds", moduleName, forwardingDuration/time.Microsecond))
+					statItem.Forwarding = forwardingDuration
+					j.log.Println(fmt.Sprintf("[%v] forward to next hop completed in %v milliseconds", moduleName, forwardingDuration/time.Millisecond))
 					timePoint = timeForwarded
 				}
 
 				// report to master
 				if j.Conf.MasterNode.IsValid() {
-					j.log.Println(fmt.Sprintf("[%v] reporting to the master", moduleName))
+					j.log.Println(fmt.Sprintf("[%v] reporting app result to the master", moduleName))
 					if errorCache == nil {
 						j.reportToMaster(req.Task, &Response{
 							Status:  "OK",
 							Payload: result,
-						}, true)
+						}, true, statItem)
 					} else {
 						errMsg := ""
 						for i, e := range errorCache {
@@ -160,13 +165,13 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 							Error:   errMsg,
 							Status:  "error when sending messages",
 							Payload: result,
-						}, true)
+						}, true, statItem)
 					}
 					timeReportedToMaster := time.Now()
 					reportingDuration := timeReportedToMaster.Sub(timePoint)
 					j.Stats[moduleName].ReportToMaster.AddDuration(reportingDuration)
 					timePoint = timeReportedToMaster
-					j.log.Println(fmt.Sprintf("[%v] report to the master completed in %v microseconds", moduleName, reportingDuration/time.Microsecond))
+					j.log.Println(fmt.Sprintf("[%v] report to the master completed in %v milliseconds", moduleName, reportingDuration/time.Millisecond))
 				}
 			}
 			// clear the task cache

@@ -71,7 +71,7 @@ func (j *JadeSDK) GetDefaultWorkerModule() WorkerModuleInstance {
 func (j *JadeSDK) SetWorkerModule(moduleName string, inst WorkerModuleInstance) {
 	if inst != nil {
 		j.WorkerModules[moduleName] = inst
-		j.Stats[moduleName] = newStat()
+		j.Stats[moduleName] = NewStat()
 	} else if _, exists := j.WorkerModules[moduleName]; exists {
 		delete(j.WorkerModules, moduleName)
 	}
@@ -104,7 +104,7 @@ func (j *JadeSDK) GetDefaultAggregatorModule() AggregatorModuleInstance {
 func (j *JadeSDK) SetAggregatorModule(moduleName string, inst AggregatorModuleInstance) {
 	if inst != nil {
 		j.AggregatorModules[moduleName] = inst
-		j.Stats[moduleName] = newStat()
+		j.Stats[moduleName] = NewStat()
 	} else if _, exists := j.AggregatorModules[moduleName]; exists {
 		delete(j.AggregatorModules, moduleName)
 	}

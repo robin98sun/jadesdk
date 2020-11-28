@@ -7,65 +7,84 @@ import (
 )
 
 type UnitStat struct {
-	Count       int64 `json:"count,omitempty"`
-	Mean        int64 `json:"mean,omitempty"`
-	MeanN       int64 `json:"meanN,omitempty"`
-	VarianceN   int64 `json:"varianceN,omitempty"`
-	DeviationN  int64 `json:"deviationN,omitempty"`
-	latestItems []int64
-	mutex       *sync.Mutex
-	N           int64 `json:"N,omitempty"`
+	Count     int64 `json:"count,omitempty"`
+	Mean      int64 `json:"mean,omitempty"`
+	Variance  int64 `json:"variance,omitempty"`
+	Deviation int64 `json:"deviation,omitempty"`
+	mutex     *sync.Mutex
 }
 
 func newUnitStat() *UnitStat {
 	return &UnitStat{
-		mutex:       &sync.Mutex{},
-		N:           10,
-		latestItems: []int64{},
+		mutex: &sync.Mutex{},
 	}
 }
 
-func (s *UnitStat) AddMicroseconds(durationMicroseconds int64) {
+func (s *UnitStat) AddMilliseconds(durationMilliseconds int64) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	s.latestItems = append(s.latestItems, durationMicroseconds)
-	s.Mean = (s.Mean*s.Count + durationMicroseconds) / (s.Count + 1)
-	s.Count++
 
-	n := int64(len(s.latestItems))
-	if n > s.N {
-		s.latestItems = s.latestItems[n-s.N:]
-	}
-	var sum int64 = 0
-	for _, d := range s.latestItems {
-		sum += d
-	}
-	s.MeanN = sum / n
+	var Xn float64
+	Xn = float64(durationMilliseconds)
 
-	s.VarianceN = 0
-	for _, d := range s.latestItems {
-		s.VarianceN += (d - s.MeanN) * (d - s.MeanN)
-	}
-	s.VarianceN /= n
-	s.DeviationN = int64(math.Sqrt(float64(s.VarianceN)))
+	var N float64
+	N = float64(s.Count + 1)
+
+	var meanPre float64
+	meanPre = float64(s.Mean)
+
+	var varancePre float64
+	varancePre = float64(s.Variance)
+
+	var meanN float64
+	meanN = (meanPre*(N-1) + Xn) / N
+
+	var varanceN float64
+	varanceN = (N - 1) / N * varancePre
+	varanceN += (N - 1) / N * (meanN - meanPre) * (meanN - meanPre)
+	varanceN += 1 / N * (Xn - meanN) * (Xn - meanN)
+
+	s.Count = int64(N)
+	s.Mean = int64(meanN)
+	s.Variance = int64(varanceN)
+	s.Deviation = int64(math.Sqrt(varanceN))
 }
 
 func (s *UnitStat) AddDuration(duration time.Duration) {
-	s.AddMicroseconds(int64(duration / time.Microsecond))
+	s.AddMilliseconds(int64(duration / time.Millisecond))
 }
 
 type Stat struct {
-	Decoding       *UnitStat
-	Task           *UnitStat
-	Forwarding     *UnitStat
-	ReportToMaster *UnitStat
+	Decoding       *UnitStat `json:"decoding,omitempty"`
+	Task           *UnitStat `json:"task,omitempty"`
+	Forwarding     *UnitStat `json:"forwarding,omitempty"`
+	ReportToMaster *UnitStat `json:"reportToMaster,omitempty"`
+	OnFly          *UnitStat `json:"onFly,omitempty"`
+	Total          *UnitStat `json:"total,omitempty"`
 }
 
-func newStat() *Stat {
+func NewStat() *Stat {
 	return &Stat{
 		Decoding:       newUnitStat(),
 		Task:           newUnitStat(),
 		Forwarding:     newUnitStat(),
 		ReportToMaster: newUnitStat(),
+		OnFly:          newUnitStat(),
+		Total:          newUnitStat(),
 	}
+}
+
+type StatItem struct {
+	Decoding   time.Duration `json:"decoding,omitempty"`
+	Task       time.Duration `json:"task,omitempty"`
+	Forwarding time.Duration `json:"forwarding,omitempty"`
+}
+
+func (s *Stat) ApplyItem(item *StatItem) {
+	if item == nil {
+		return
+	}
+	s.Decoding.AddDuration(item.Decoding)
+	s.Task.AddDuration(item.Task)
+	s.Forwarding.AddDuration(item.Forwarding)
 }
