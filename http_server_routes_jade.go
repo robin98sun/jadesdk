@@ -40,7 +40,6 @@ func (j *JadeSDK) createJadeInterfaces() []*rest.Route {
 			w.WriteJson(newSuccessResponse(j.AggregativeTaskCache))
 		}),
 		rest.Get("/$jade$/stat", func(w rest.ResponseWriter, r *rest.Request) {
-			// TODO
 			w.WriteJson(newSuccessResponse(j.Stats))
 		}),
 	}
