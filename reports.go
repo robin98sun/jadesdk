@@ -10,6 +10,7 @@ type ReportMessage struct {
 	Updates    *Response `json:"updates,omitempty"`
 	Stat       *StatItem `json:"stat,omitempty"`
 	Status     string    `json:"status,omitempty"`
+	Node       *Node     `json:"node,omitempty"`
 }
 
 func (j *JadeSDK) reportToMaster(task *Task, updates *Response, doneOrFail bool, stat *StatItem) {
@@ -22,6 +23,7 @@ func (j *JadeSDK) reportToMaster(task *Task, updates *Response, doneOrFail bool,
 		SubtaskKey: task.SubtaskID,
 		Updates:    updates,
 		Stat:       stat,
+		Node:       j.Conf.SelfNode,
 	}
 	if doneOrFail {
 		msg.Status = "done"
