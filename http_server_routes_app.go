@@ -75,7 +75,7 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 				if j.AggregativeTaskCache.DoesSubtaskExist(req.Task.TaskID, req.Task.SubtaskID) {
 					j.log.Printf("received the result of subtask [%v] of task[%v]", req.Task.SubtaskID, req.Task.TaskID)
 					cumulation, previousResults := j.AggregativeTaskCache.GetCumulation(req.Task.TaskID)
-					j.log.Printf("for subtask [%v] of task[%v], cumulation: %v, with {%v} previous results", req.Task.SubtaskID, req.Task.TaskID, cumulation, len(previousResults))
+					// j.log.Printf("for subtask [%v] of task[%v], cumulation: %v, with {%v} previous results", req.Task.SubtaskID, req.Task.TaskID, cumulation, len(previousResults))
 					j.AggregativeTaskCache.SetSubtaskResult(req.Task.TaskID, req.Task.SubtaskID, input)
 					j.log.Printf("saved result of subtask [%v] of task[%v]", req.Task.SubtaskID, req.Task.TaskID)
 					TryCatchBlock{
