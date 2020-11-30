@@ -134,7 +134,7 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 					reportTo = append(reportTo, req.To...)
 				}
 				if len(reportTo) > 0 {
-					j.log.Println(fmt.Sprintf("[%v] forwarding to next hop (%v nodes)", moduleName, len(req.To)))
+					j.log.Println(fmt.Sprintf("[%v] forwarding to next hop (%v nodes)", moduleName, len(reportTo)))
 					if moduleType == AppModuleAggregator {
 						req.Task.SubtaskID = j.AggregativeTaskCache.GetAggregatorSubtaskKey(req.Task.TaskID)
 					}
