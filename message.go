@@ -61,7 +61,7 @@ func (j *JadeSDK) sendMessages(task *Task, from *Interface, to []*Interface, mes
 			errorCache[i.Key()] = err
 			j.log.Println("error when sending message sent to "+i.Key(), err.Error())
 		} else {
-			j.log.Println("message sent to "+i.Key(), message)
+			j.log.Println("message sent to " + i.Key())
 		}
 	}
 	if len(errorCache) == 0 {
