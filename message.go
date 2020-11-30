@@ -18,6 +18,7 @@ type Request struct {
 type AggregatorEnqueuingMessage struct {
 	TaskKey    string       `json:"taskId,omitempty"`
 	SubtaskKey string       `json:"subtaskId,omitempty"`
+	ModuleName string       `json:"moduleName,omitempty"`
 	Subtasks   []string     `json:"subtasks,omitempty"`
 	ReportTo   []*Interface `json:"reportTo,omitempty"`
 }

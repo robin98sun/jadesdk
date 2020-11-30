@@ -113,10 +113,15 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 			} else if moduleType == AppModuleAggregator {
 				j.log.Printf("[%v] all subtasks of task[%v] is done", moduleName, req.Task.TaskID)
 			}
+			// prepare to forward and report
+			task := req.Task
+			if moduleType == AppModuleAggregator {
+				task = j.AggregativeTaskCache.GetAggregatorTask(req.Task.TaskID)
+			}
 			if err != nil {
 				errMsg := fmt.Sprintf("[%v] error when processing result of subtask[%v], ERROR: %v", moduleName, req.Task.SubtaskID, err.Error())
 				j.log.Println(errMsg)
-				j.reportToMaster(req.Task, &Response{
+				j.reportToMaster(task, &Response{
 					Error: errMsg,
 				}, false, statItem)
 				timeReportedToMasterAboutError := time.Now()
@@ -128,17 +133,14 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 				var reportTo []*Interface
 				// report to upper tier aggregators
 				if moduleType == AppModuleAggregator {
-					reportTo = j.AggregativeTaskCache.GetReportTo(req.Task.TaskID)
+					reportTo = j.AggregativeTaskCache.GetReportTo(task.TaskID)
 				}
 				if len(req.To) > 0 {
 					reportTo = append(reportTo, req.To...)
 				}
 				if len(reportTo) > 0 {
 					j.log.Println(fmt.Sprintf("[%v] forwarding to next hop (%v nodes)", moduleName, len(reportTo)))
-					if moduleType == AppModuleAggregator {
-						req.Task.SubtaskID = j.AggregativeTaskCache.GetAggregatorSubtaskKey(req.Task.TaskID)
-					}
-					errorCache = j.sendMessages(req.Task, j.GetSelfInterface(moduleName), reportTo, result)
+					errorCache = j.sendMessages(task, j.GetSelfInterface(moduleName), reportTo, result)
 					timeForwarded := time.Now()
 					forwardingDuration := timeForwarded.Sub(timePoint)
 					j.Stats[moduleName].Forwarding.AddDuration(forwardingDuration)
@@ -151,7 +153,7 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 				if j.Conf.MasterNode.IsValid() {
 					j.log.Println(fmt.Sprintf("[%v] reporting app result to the master", moduleName))
 					if errorCache == nil {
-						j.reportToMaster(req.Task, &Response{
+						j.reportToMaster(task, &Response{
 							Status:  "OK",
 							Payload: result,
 						}, true, statItem)
@@ -161,7 +163,7 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 							errMsg += i + "=" + e.Error() + "; "
 						}
 						errMsg = strings.Trim(errMsg, " ;")
-						j.reportToMaster(req.Task, &Response{
+						j.reportToMaster(task, &Response{
 							Error:   errMsg,
 							Status:  "error when sending messages",
 							Payload: result,
@@ -175,8 +177,8 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 				}
 			}
 			// clear the task cache
-			if moduleType == AppModuleAggregator && j.AggregativeTaskCache.IsTaskDone(req.Task.TaskID) {
-				j.AggregativeTaskCache.CleanTask(req.Task.TaskID)
+			if moduleType == AppModuleAggregator && j.AggregativeTaskCache.IsTaskDone(task.TaskID) {
+				j.AggregativeTaskCache.CleanTask(task.TaskID)
 			}
 		}
 		go taskThread()

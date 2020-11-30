@@ -29,6 +29,7 @@ type AggregativeTaskCacheItem struct {
 	Cumulation interface{}                                 // cumulative Result of so far responded subtasks
 	ReportTo   []*Interface                                // upper layer aggregators
 	SubtaskKey string                                      // the id of the aggregator subtask
+	ModuleName string
 }
 
 type AggregativeTaskCacheSubtaskItem struct {
@@ -50,6 +51,7 @@ func (q *AggregativeTaskCache) EnqueueAggregativeTask(msg *AggregatorEnqueuingMe
 			Subtasks:   make(map[string]*AggregativeTaskCacheSubtaskItem),
 			ReportTo:   msg.ReportTo,
 			SubtaskKey: msg.SubtaskKey,
+			ModuleName: msg.ModuleName,
 		}
 	}
 	for _, subtaskKey := range msg.Subtasks {
@@ -171,6 +173,22 @@ func (q *AggregativeTaskCache) GetAggregatorSubtaskKey(taskKey string) string {
 		return taskItem.SubtaskKey
 	}
 	return ""
+}
+
+func (q *AggregativeTaskCache) GetAggregatorTask(taskKey string) *Task {
+	if q == nil || len(q.Cache) == 0 {
+		return nil
+	}
+	q.Lock()
+	defer q.Unlock()
+	if taskItem, e := q.Cache[taskKey]; e {
+		return &Task{
+			TaskID:     taskKey,
+			SubtaskID:  taskItem.SubtaskKey,
+			ModuleName: taskItem.ModuleName,
+		}
+	}
+	return nil
 }
 
 func (q *AggregativeTaskCache) GetReportTo(taskKey string) []*Interface {
