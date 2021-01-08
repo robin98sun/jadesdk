@@ -17,9 +17,9 @@ const (
 	RetryIntervalShort      = 3
 )
 
-func (j *JadeSDK) retryHTTPCommunication(op string, protocol string, method string, path string, targetNode *Node, payload interface{}, logMsg string, seconds int, retryCnt int, retrylimitation int) (interface{}, error) {
+func (j *JadeSDK) retryHTTPCommunication(op string, protocol string, method string, path string, targetNode *Node, payload interface{}, logMsg string, seconds int, retryCnt int, retrylimitation int) (interface{}, int, error) {
 	if retrylimitation >= 0 && retryCnt > retrylimitation {
-		return nil, errors.New(logMsg)
+		return nil, 0, errors.New(logMsg)
 	}
 	if logMsg != "" {
 		j.log.Println(logMsg, "; going to retry ["+op+"]in", seconds, "seconds...")
@@ -29,11 +29,11 @@ func (j *JadeSDK) retryHTTPCommunication(op string, protocol string, method stri
 }
 
 // HTTPCommunicate access target node, if retry > 0, then finite retry mode, if retry == 0, then disable retry mode, if retry < 0, then infinite retry mode
-func (j *JadeSDK) HTTPCommunicate(operationName string, protocol string, method string, path string, targetNode *Node, payload interface{}, retryCnt int, retryLimitation int) (interface{}, error) {
+func (j *JadeSDK) HTTPCommunicate(operationName string, protocol string, method string, path string, targetNode *Node, payload interface{}, retryCnt int, retryLimitation int) (interface{}, int, error) {
 	if targetNode == nil || (strings.ToLower(protocol) != "http" && strings.ToLower(protocol) != "https") {
 		msg := "ERROR: invalid target node for " + operationName
 		j.log.Println(msg)
-		return nil, errors.New(msg)
+		return nil, 0, errors.New(msg)
 	}
 	retryInterval := RetryIntervalShort
 
@@ -44,10 +44,12 @@ func (j *JadeSDK) HTTPCommunicate(operationName string, protocol string, method 
 	j.log.Println("[comm] "+operationName+" started toward target node:", targetNode.Key(), tailstr)
 
 	reqbody, err := json.Marshal(payload)
+	reqLength := 0
 	if err != nil {
 		msg := "ERROR during encoding payload: " + err.Error()
 		return j.retryHTTPCommunication(operationName, protocol, method, path, targetNode, payload, msg, retryInterval, retryCnt+1, retryLimitation)
 	}
+	reqLength = len(reqbody)
 	targetURL := protocol + "://" + targetNode.Key() + path
 	// Send the register information to upper node
 	req, err := http.NewRequest(strings.ToUpper(method), targetURL, bytes.NewBuffer(reqbody))
@@ -74,7 +76,7 @@ func (j *JadeSDK) HTTPCommunicate(operationName string, protocol string, method 
 	} else {
 		if resMsg.Status == "OK" {
 			j.log.Println("[comm] "+operationName+" completed with target node:", targetNode.Key())
-			return resMsg.Payload, nil
+			return resMsg.Payload, reqLength, nil
 		} else {
 			msg := "target node responded abnormal status: " + resMsg.Status
 			return j.retryHTTPCommunication(operationName, protocol, method, path, targetNode, payload, msg, retryInterval, retryCnt+1, retryLimitation)

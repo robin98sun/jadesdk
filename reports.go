@@ -32,7 +32,7 @@ func (j *JadeSDK) reportToMaster(task *Task, updates *Response, doneOrFail bool,
 	}
 
 	j.log.Println("reporting to master:", msg)
-	res, err := j.HTTPCommunicate(
+	res, _, err := j.HTTPCommunicate(
 		"report to master", "http", "put",
 		"/$jade$/app/listener", j.Conf.MasterNode, msg,
 		0, 10)

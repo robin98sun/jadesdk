@@ -20,12 +20,12 @@ func newUnitStat() *UnitStat {
 	}
 }
 
-func (s *UnitStat) AddMilliseconds(durationMilliseconds int64) {
+func (s *UnitStat) AddNumber(number int64) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	var Xn float64
-	Xn = float64(durationMilliseconds)
+	Xn = float64(number)
 
 	var N float64
 	N = float64(s.Count + 1)
@@ -51,40 +51,42 @@ func (s *UnitStat) AddMilliseconds(durationMilliseconds int64) {
 }
 
 func (s *UnitStat) AddDuration(duration time.Duration) {
-	s.AddMilliseconds(int64(duration / time.Millisecond))
+	s.AddNumber(int64(duration / time.Millisecond))
 }
 
 type Stat struct {
-	Decoding       *UnitStat `json:"decoding,omitempty"`
-	Task           *UnitStat `json:"task,omitempty"`
+	Service        *UnitStat `json:"service,omitempty"`
 	Forwarding     *UnitStat `json:"forwarding,omitempty"`
 	ReportToMaster *UnitStat `json:"reportToMaster,omitempty"`
-	OnFly          *UnitStat `json:"onFly,omitempty"`
-	Total          *UnitStat `json:"total,omitempty"`
+	RTT            *UnitStat `json:"RTT,omitempty"`
+	Request        *UnitStat `json:"request,omitempty"`
+	PackageSize    *UnitStat `json:"packageSize,omitempty"`
+	QueueingTime   *UnitStat `json:"queueingTime,omitempty"`
+	QueueLength    *UnitStat `json:"queueLength,omitempty"`
 }
 
 func NewStat() *Stat {
 	return &Stat{
-		Decoding:       newUnitStat(),
-		Task:           newUnitStat(),
+		Service:        newUnitStat(),
 		Forwarding:     newUnitStat(),
 		ReportToMaster: newUnitStat(),
-		OnFly:          newUnitStat(),
-		Total:          newUnitStat(),
+		RTT:            newUnitStat(),
+		Request:        newUnitStat(),
+		PackageSize:    newUnitStat(),
 	}
 }
 
 type StatItem struct {
-	Decoding   time.Duration `json:"decoding,omitempty"`
-	Task       time.Duration `json:"task,omitempty"`
-	Forwarding time.Duration `json:"forwarding,omitempty"`
+	Service     time.Duration `json:"service,omitempty"`
+	Forwarding  time.Duration `json:"forwarding,omitempty"`
+	PackageSize int64         `json:"packageSize,omitempty"`
 }
 
 func (s *Stat) ApplyItem(item *StatItem) {
 	if item == nil {
 		return
 	}
-	s.Decoding.AddDuration(item.Decoding)
-	s.Task.AddDuration(item.Task)
+	s.Service.AddDuration(item.Service)
 	s.Forwarding.AddDuration(item.Forwarding)
+	s.PackageSize.AddNumber(item.PackageSize)
 }
