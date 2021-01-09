@@ -1,7 +1,8 @@
 package jadesdk
 
 import (
-// "encoding/json"
+	// "encoding/json"
+	"errors"
 )
 
 type ReportMessage struct {
@@ -16,7 +17,7 @@ type ReportMessage struct {
 func (j *JadeSDK) reportToMaster(task *Task, updates *Response, doneOrFail bool, stat *StatItem) (interface{}, int, error) {
 	if !j.Conf.MasterNode.IsValid() {
 		j.log.Println("unable to report to master due to no valid master node")
-		return
+		return nil, 0, errors.New("unable to report to master due to no valid master node")
 	}
 	msg := &ReportMessage{
 		TaskKey:    task.TaskID,
