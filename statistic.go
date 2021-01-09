@@ -1,6 +1,7 @@
 package jadesdk
 
 import (
+	"log"
 	"math"
 	"sync"
 	"time"
@@ -21,9 +22,10 @@ func newUnitStat() *UnitStat {
 }
 
 func (s *UnitStat) AddNumber(number int64) {
+	log.Printf("unit stat:", s, ", number:", number)
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-
+	log.Printf("adding number to unit stat")
 	var Xn float64
 	Xn = float64(number)
 
@@ -73,6 +75,8 @@ func NewStat() *Stat {
 		RTT:            newUnitStat(),
 		Request:        newUnitStat(),
 		PackageSize:    newUnitStat(),
+		QueueLength:    newUnitStat(),
+		QueueingTime:   newUnitStat(),
 	}
 }
 
