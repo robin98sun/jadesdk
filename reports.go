@@ -13,7 +13,7 @@ type ReportMessage struct {
 	Node       *Node     `json:"node,omitempty"`
 }
 
-func (j *JadeSDK) reportToMaster(task *Task, updates *Response, doneOrFail bool, stat *StatItem) {
+func (j *JadeSDK) reportToMaster(task *Task, updates *Response, doneOrFail bool, stat *StatItem) (interface{}, int, error) {
 	if !j.Conf.MasterNode.IsValid() {
 		j.log.Println("unable to report to master due to no valid master node")
 		return
@@ -32,7 +32,7 @@ func (j *JadeSDK) reportToMaster(task *Task, updates *Response, doneOrFail bool,
 	}
 
 	j.log.Println("reporting to master:", msg)
-	res, _, err := j.HTTPCommunicate(
+	res, reqlen, err := j.HTTPCommunicate(
 		"report to master", "http", "put",
 		"/$jade$/app/listener", j.Conf.MasterNode, msg,
 		0, 10)
@@ -41,4 +41,5 @@ func (j *JadeSDK) reportToMaster(task *Task, updates *Response, doneOrFail bool,
 	} else {
 		j.log.Println("reported, master response:", res)
 	}
+	return res, reqlen, err
 }
