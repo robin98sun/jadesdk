@@ -68,6 +68,7 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 				if req.Options != nil && req.Options.EstimatedServiceTime > 0 {
 					// backdoor for fake service time
 					time.Sleep(time.Duration(req.Options.EstimatedServiceTime) * time.Millisecond)
+					j.log.Printf("running in simlation mode, sleep %v milliseconds according to the service time setting", req.Options.EstimatedServiceTime)
 				} else {
 					result, err = moduleInst.(WorkerModuleInstance).Handler(input)
 				}
@@ -82,6 +83,9 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 
 					if req.Options != nil && req.Options.EstimatedServiceTime > 0 {
 						// backdoor for fake service time
+						j.log.Printf("the subtask [%v] is running in the simulation mode with service time [%v], its result is ignored",
+							req.Task.SubtaskID, req.Options.EstimatedServiceTime,
+						)
 					} else {
 						TryCatchBlock{
 							Try: func() {
