@@ -32,4 +32,5 @@ func (c *Comm) Request(
 
 	}
 
+	return nil, 0, nil
 }
