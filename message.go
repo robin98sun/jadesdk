@@ -7,7 +7,7 @@ import (
 )
 
 type RequestOptions struct {
-	EstimatedServiceTime int64 `json:"est,omit"`
+	EstimatedServiceTime float64 `json:"estimatedServiceTime,omitempty"`
 }
 
 // Request message of request
