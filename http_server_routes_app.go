@@ -38,7 +38,7 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 		var req *Request
 		var err error
 		var input interface{}
-		var statItem *StatItem = &StatItem{}
+		var oneOffStatItem *StatItem = &StatItem{}
 		if moduleType == AppModuleWorker {
 			workerInput := moduleInst.(WorkerModuleInstance).ShapeInput()
 			req, err = decodeRequest(moduleName, workerInput, r)
@@ -62,6 +62,10 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 		w.WriteJson(newSuccessResponse("received"))
 		// process the task
 		taskThread := func() {
+			timeStart := time.Now()
+			preServiceTimeDuration := timeStart.Sub(timeArrive)
+			j.Stats[moduleName].PreService.AddDuration(preServiceTimeDuration)
+			oneOffStatItem.PreService = preServiceTimeDuration
 			var result interface{}
 			var err error
 			if moduleType == AppModuleWorker {
@@ -75,6 +79,7 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 			} else if moduleType == AppModuleAggregator {
 				j.log.Printf("checking subtask[%v] of task[%v] in cache", req.Task.SubtaskID, req.Task.TaskID)
 				if j.AggregativeTaskCache.DoesSubtaskExist(req.Task.TaskID, req.Task.SubtaskID) {
+					j.AggregativeTaskCache.SetSubtaskPreServiceTime(req.Task.TaskID, req.Task.SubtaskID, preServiceTimeDuration)
 					j.log.Printf("received the result of subtask [%v] of task[%v]", req.Task.SubtaskID, req.Task.TaskID)
 					cumulation, previousResults := j.AggregativeTaskCache.GetCumulation(req.Task.TaskID)
 					// j.log.Printf("for subtask [%v] of task[%v], cumulation: %v, with {%v} previous results", req.Task.SubtaskID, req.Task.TaskID, cumulation, len(previousResults))
@@ -113,15 +118,24 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 				}
 			}
 			timeExecuted := time.Now()
-			executionDuration := timeExecuted.Sub(timeArrive)
-			j.Stats[moduleName].Service.AddDuration(executionDuration)
-			statItem.Service = executionDuration
+			executionDuration := timeExecuted.Sub(timeStart)
+			j.AggregativeTaskCache.SetSubtaskExecutionTime(req.Task.TaskID, req.Task.SubtaskID, executionDuration)
+			j.Stats[moduleName].ExecutionTime.AddDuration(executionDuration)
+			oneOffStatItem.Execution = executionDuration
 			j.log.Println(fmt.Sprintf("[%v] done in %v milliseconds", moduleName, executionDuration/time.Millisecond))
 			if moduleType == AppModuleAggregator && !j.AggregativeTaskCache.IsTaskDone(req.Task.TaskID) {
 				j.log.Printf("[%v] still waiting for more subtasks of task[%v]", moduleName, req.Task.TaskID)
 				return
 			} else if moduleType == AppModuleAggregator {
 				j.log.Printf("[%v] all subtasks of task[%v] is done", moduleName, req.Task.TaskID)
+				taskArrivalTime := j.AggregativeTaskCache.GetArrivalTime(req.Task.TaskID)
+				oneOffStatItem.Service = timeExecuted.Sub(taskArrivalTime)
+				j.Stats[moduleName].Service.AddDuration(oneOffStatItem.Service)
+				oneOffStatItem.Execution = j.AggregativeTaskCache.GetCumulativeExecutionTime(req.Task.TaskID)
+				oneOffStatItem.PreService = j.AggregativeTaskCache.GetCumulativePreServiceTime(req.Task.TaskID)
+			} else if moduleType == AppModuleWorker {
+				j.Stats[moduleName].Service.AddDuration(executionDuration)
+				oneOffStatItem.Service = oneOffStatItem.Execution
 			}
 			// prepare to forward and report
 			task := req.Task
@@ -133,7 +147,7 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 				j.log.Println(errMsg)
 				j.reportToMaster(task, &Response{
 					Error: errMsg,
-				}, false, statItem)
+				}, false, oneOffStatItem)
 				timeReportedToMasterAboutError := time.Now()
 				j.Stats[moduleName].ReportToMaster.AddDuration(timeReportedToMasterAboutError.Sub(timeExecuted))
 			} else {
@@ -141,6 +155,8 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 				var errorCache map[string]error
 				var reqlen int
 				timePoint := time.Now()
+				oneOffStatItem.PostService = timePoint.Sub(timeExecuted)
+				j.Stats[moduleName].PostService.AddDuration(oneOffStatItem.PostService)
 				var reportTo []*Interface
 				// report to upper tier aggregators
 				if moduleType == AppModuleAggregator {
@@ -156,8 +172,8 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 					forwardingDuration := timeForwarded.Sub(timePoint)
 					j.Stats[moduleName].Forwarding.AddDuration(forwardingDuration)
 					j.Stats[moduleName].PackageSize.AddNumber(int64(reqlen))
-					statItem.Forwarding = forwardingDuration
-					statItem.PackageSize = int64(reqlen)
+					oneOffStatItem.Forwarding = forwardingDuration
+					oneOffStatItem.PackageSize = int64(reqlen)
 					j.log.Println(fmt.Sprintf("[%v] forward to next hop completed in %v milliseconds", moduleName, forwardingDuration/time.Millisecond))
 					timePoint = timeForwarded
 				}
@@ -169,7 +185,7 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 						j.reportToMaster(task, &Response{
 							Status:  "OK",
 							Payload: result,
-						}, true, statItem)
+						}, true, oneOffStatItem)
 					} else {
 						errMsg := ""
 						for i, e := range errorCache {
@@ -180,7 +196,7 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 							Error:   errMsg,
 							Status:  "error when sending messages",
 							Payload: result,
-						}, true, statItem)
+						}, true, oneOffStatItem)
 					}
 					timeReportedToMaster := time.Now()
 					reportingDuration := timeReportedToMaster.Sub(timePoint)

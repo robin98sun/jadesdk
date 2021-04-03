@@ -2,6 +2,7 @@ package jadesdk
 
 import (
 	"sync"
+	"time"
 )
 
 type AggregativeTaskCache struct {
@@ -30,11 +31,16 @@ type AggregativeTaskCacheItem struct {
 	ReportTo   []*Interface                                // upper layer aggregators
 	SubtaskKey string                                      // the id of the aggregator subtask
 	ModuleName string
+	ArrivalTime time.Time
+	CumulativeExcutionTime time.Duration
+	CumulativePreServiceTime time.Duration
 }
 
 type AggregativeTaskCacheSubtaskItem struct {
 	SubtaskKey string
 	Result     interface{}
+	ExecutionTime time.Duration
+	PreServiceTime time.Duration
 }
 
 func (q *AggregativeTaskCache) EnqueueAggregativeTask(msg *AggregatorEnqueuingMessage) {
@@ -52,6 +58,7 @@ func (q *AggregativeTaskCache) EnqueueAggregativeTask(msg *AggregatorEnqueuingMe
 			ReportTo:   msg.ReportTo,
 			SubtaskKey: msg.SubtaskKey,
 			ModuleName: msg.ModuleName,
+			ArrivalTime: time.Now(),
 		}
 	}
 	for _, subtaskKey := range msg.Subtasks {
@@ -110,6 +117,70 @@ func (q *AggregativeTaskCache) GetCumulation(taskKey string) (interface{}, []int
 		return cacheItem.Cumulation, q.getResultsOfCompletedSubtasks(taskKey)
 	}
 	return nil, nil
+}
+
+func (q *AggregativeTaskCache) GetArrivalTime(taskKey string) (time.Time) {
+	if q == nil || len(q.Cache) == 0 {
+		return time.Time{}
+	}
+	q.Lock()
+	defer q.Unlock()
+	if cacheItem, e := q.Cache[taskKey]; e {
+		return cacheItem.ArrivalTime
+	}
+	return time.Time{}
+}
+
+func (q *AggregativeTaskCache) GetCumulativeExecutionTime(taskKey string) (time.Duration) {
+	if q == nil || len(q.Cache) == 0 {
+		return time.Duration(0)
+	}
+	q.Lock()
+	defer q.Unlock()
+	if cacheItem, e := q.Cache[taskKey]; e {
+		return cacheItem.CumulativeExcutionTime
+	}
+	return time.Duration(0)
+}
+
+func (q *AggregativeTaskCache) SetSubtaskExecutionTime(taskKey string, subtaskKey string, executionTime time.Duration) {
+	if q == nil || len(q.Cache) == 0 {
+		return
+	}
+	q.Lock()
+	defer q.Unlock()
+	if cacheItem, e := q.Cache[taskKey]; e {
+		cacheItem.CumulativeExcutionTime += executionTime
+		if subtaskItem, e := cacheItem.Subtasks[subtaskKey]; e {
+			subtaskItem.ExecutionTime = executionTime
+		}
+	}
+}
+
+func (q *AggregativeTaskCache) GetCumulativePreServiceTime(taskKey string) (time.Duration) {
+	if q == nil || len(q.Cache) == 0 {
+		return time.Duration(0)
+	}
+	q.Lock()
+	defer q.Unlock()
+	if cacheItem, e := q.Cache[taskKey]; e {
+		return cacheItem.CumulativePreServiceTime
+	}
+	return time.Duration(0)
+}
+
+func (q *AggregativeTaskCache) SetSubtaskPreServiceTime(taskKey string, subtaskKey string, preServicTime time.Duration) {
+	if q == nil || len(q.Cache) == 0 {
+		return
+	}
+	q.Lock()
+	defer q.Unlock()
+	if cacheItem, e := q.Cache[taskKey]; e {
+		cacheItem.CumulativePreServiceTime += preServicTime
+		if subtaskItem, e := cacheItem.Subtasks[subtaskKey]; e {
+			subtaskItem.PreServiceTime = preServicTime
+		}
+	}
 }
 
 func (q *AggregativeTaskCache) getResultsOfCompletedSubtasks(taskKey string) []interface{} {
