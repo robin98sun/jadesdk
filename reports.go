@@ -3,6 +3,7 @@ package jadesdk
 import (
 	// "encoding/json"
 	"errors"
+	"time"
 )
 
 type ReportMessage struct {
@@ -33,10 +34,10 @@ func (j *JadeSDK) reportToMaster(task *Task, updates *Response, doneOrFail bool,
 	}
 
 	j.log.Println("reporting to master:", msg)
-	res, reqlen, err := j.HTTPCommunicate(
+	res, reqlen, _, _, err := j.HTTPCommunicate(
 		"report to master", "http", "put",
 		"/$jade$/app/listener", j.Conf.MasterNode, msg,
-		0, 10)
+		0, 10, time.Time{})
 	if err != nil {
 		j.log.Println("error when reporting to master:", err.Error())
 	} else {
