@@ -77,9 +77,9 @@ func (j *JadeSDK) HTTPCommunicate(
 	timestampEnd := time.Now()
 	durationOfTransmission := timestampEnd.Sub(timestampStart)
 
-	recordedTimestampSending := timestampSending
-	if timestampSending.IsZero() {
-		recordedTimestampSending = timestampStart
+	recordedTimestampSending := timestampStart
+	if !timestampSending.IsZero() && timestampStart.Sub(timestampSending) < time.Duration(1800)*time.Second{
+		recordedTimestampSending = timestampSending
 	}
 
 	if err != nil {
