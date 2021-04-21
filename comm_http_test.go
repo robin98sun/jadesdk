@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"testing"
 	"time"
-
 	"github.com/ant0ine/go-json-rest/rest"
 )
 
@@ -82,14 +81,14 @@ func TestHttpComm_Basic(t *testing.T) {
 		Port:     3333,
 		Protocol: "http",
 	}
-	res, bytes, err := sdk.HTTPCommunicate(
+	res, bytes, _, _,  err := sdk.HTTPCommunicate(
 		"test http communication",
 		"http", "put", "/$jade$/testPut",
 		serverNode,
 		&TestRequest{
 			ReqID: "rid:" + strconv.FormatInt(int64(time.Now().UnixNano()), 10),
 		},
-		0, -1,
+		0, -1, time.Time{},
 	)
 	if err != nil {
 		t.Error("server responded an error:", err)
@@ -106,7 +105,7 @@ func TestHttpComm_RetryExpectedTimes(t *testing.T) {
 		Port:     3333,
 		Protocol: "http",
 	}
-	res, bytes, err := sdk.HTTPCommunicate(
+	res, bytes, _, _, err := sdk.HTTPCommunicate(
 		"test http communication",
 		"http", "put", "/$jade$/testPut",
 		serverNode,
@@ -115,7 +114,7 @@ func TestHttpComm_RetryExpectedTimes(t *testing.T) {
 			ExpectedRetryTimes: 3,
 			ExpectingResponse:  "retry count",
 		},
-		0, -1,
+		0, -1, time.Time{},
 	)
 	if err != nil {
 		t.Error("server responded an error:", err)
@@ -139,7 +138,7 @@ func TestHttpComm_KeepAlive(t *testing.T) {
 
 	var clientAddr interface{}
 	for i := 0; i < 10; i++ {
-		res, _, err := sdk.HTTPCommunicate(
+		res, _, _, _, err := sdk.HTTPCommunicate(
 			"test http communication",
 			"http", "put", "/$jade$/testPut",
 			serverNode,
@@ -148,7 +147,7 @@ func TestHttpComm_KeepAlive(t *testing.T) {
 				ExpectedRetryTimes: 0,
 				ExpectingResponse:  "remote addr",
 			},
-			0, -1,
+			0, -1, time.Time{},
 		)
 		if err != nil {
 			t.Error("server responded an error:", err)
@@ -163,4 +162,39 @@ func TestHttpComm_KeepAlive(t *testing.T) {
 		}
 	}
 	t.Log("keep-alive is ok")
+}
+
+func TestHttpComm_Timestamp(t *testing.T) {
+	sdk := NewJadeSDK()
+	sdk.Verbose(false)
+	serverNode := &Node{
+		Addr:     "127.0.0.1",
+		Port:     3333,
+		Protocol: "http",
+	}
+	for i := 0; i < 10000; i++ {
+		_, _, ts, dur, err := sdk.HTTPCommunicate(
+			"test http communication",
+			"http", "put", "/$jade$/testPut",
+			serverNode,
+			&TestRequest{
+				ReqID:              "rid:" + strconv.FormatInt(int64(time.Now().UnixNano()), 10),
+				ExpectedRetryTimes: 0,
+				ExpectingResponse:  "remote addr",
+			},
+			0, -1, time.Time{},
+		)
+		if err != nil {
+			t.Error("server responded an error:", err)
+		} else if ts.IsZero() {
+			t.Error("timestamp of sending is zero", i)
+		} else if dur == 0 {
+			t.Error("duration of sending is zero", i)
+		} else if time.Now().Sub(ts)/time.Second > 1 {
+			t.Error("timestamp of sending is error", i)
+		} else {
+			log.Println("timestamp: ", ts, ", duration: ", dur)
+		}
+	}
+	log.Println("timestamp is ok")
 }
