@@ -101,6 +101,7 @@ type StatItem struct {
 	PostService time.Duration `json:"postService,omitempty"`
 	Forwarding  time.Duration `json:"forwarding,omitempty"`
 	PackageSize int64         `json:"packageSize,omitempty"`
+	RetryCountOfArrivalComm int64 `json:"retryCountOfArrivalComm,omitempty"`
 }
 
 func (s *Stat) ApplyItem(item *StatItem) {

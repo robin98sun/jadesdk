@@ -6,6 +6,7 @@ import (
 	"github.com/ant0ine/go-json-rest/rest"
 	"strings"
 	"time"
+	"strconv"
 )
 
 func (j *JadeSDK) createAppRoutes() []*rest.Route {
@@ -60,6 +61,11 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 			return
 		}
 		w.WriteJson(newSuccessResponse("received"))
+
+		retryCountStr := r.Header.Get("retry-count")
+		if retryCountStr != "" {
+			oneOffStatItem.RetryCountOfArrivalComm, _ = strconv.ParseInt(retryCountStr, 10, 64)
+		}
 		// process the task
 		taskThread := func() {
 			timeStart := time.Now()
