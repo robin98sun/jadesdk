@@ -2,9 +2,6 @@ package jadesdk
 
 import (
 // "encoding/json"
-// "errors"
-// "github.com/ant0ine/go-json-rest/rest"
-	"time"
 )
 
 type RequestOptions struct {
@@ -56,7 +53,7 @@ func (j *JadeSDK) sendMessages(task *Task, from *Interface, to []*Interface, mes
 		if !i.IsValid() {
 			continue
 		}
-		_, reqlen, _, _, err := j.HTTPCommunicate(
+		_, reqlen, err := j.HTTPCommunicate(
 			"send message to "+i.Key(),
 			"http", "POST", "/"+i.ModuleName, i.Node,
 			&Request{
@@ -65,7 +62,8 @@ func (j *JadeSDK) sendMessages(task *Task, from *Interface, to []*Interface, mes
 				Payload: message,
 				Options: options,
 			},
-			0, 30, time.Time{})
+			0, 30,
+		)
 		if err != nil {
 			errorCache[i.Key()] = err
 			j.log.Println("error when sending message sent to "+i.Key(), err.Error())

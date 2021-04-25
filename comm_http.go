@@ -4,9 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-
-	// "github.com/ant0ine/go-json-rest/rest"
-	// "io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -22,16 +19,15 @@ func (j *JadeSDK) retryHTTPCommunication(
 	op string, protocol string, method string, path string, targetNode *Node, 
 	payload interface{}, logMsg string, seconds int, 
 	retryCnt int, retrylimitation int,
-	timestampSending time.Time,
-) (interface{}, int, time.Time, time.Duration, error) {
+) (interface{}, int, error) {
 	if retrylimitation >= 0 && retryCnt > retrylimitation {
-		return nil, 0, time.Time{}, time.Duration(0), errors.New(logMsg)
+		return nil, 0, errors.New(logMsg)
 	}
 	if logMsg != "" {
 		j.log.Println(logMsg, "; going to retry ["+op+"] for the {"+strconv.Itoa(retryCnt)+"}th time in", seconds, "seconds...")
 	}
 	time.Sleep(time.Second * time.Duration(seconds))
-	return j.HTTPCommunicate(op, protocol, method, path, targetNode, payload, retryCnt, retrylimitation, timestampSending)
+	return j.HTTPCommunicate(op, protocol, method, path, targetNode, payload, retryCnt, retrylimitation)
 }
 
 // HTTPCommunicate access target node, if retry > 0, then finite retry mode, if retry == 0, then disable retry mode, if retry < 0, then infinite retry mode
@@ -44,12 +40,11 @@ func (j *JadeSDK) HTTPCommunicate(
 	operationName string, protocol string, method string, path string, targetNode *Node, 
 	payload interface{}, 
 	retryCnt int, retryLimitation int,
-	timestampSending time.Time,
-) (interface{}, int, time.Time, time.Duration, error) {
+) (interface{}, int, error) {
 	if targetNode == nil || (strings.ToLower(protocol) != "http" && strings.ToLower(protocol) != "https") {
 		msg := "ERROR: invalid target node for " + operationName
 		j.log.Println(msg)
-		return nil, 0, time.Time{}, time.Duration(0), errors.New(msg)
+		return nil, 0, errors.New(msg)
 	}
 	retryInterval := RetryIntervalShort
 
@@ -63,7 +58,7 @@ func (j *JadeSDK) HTTPCommunicate(
 	reqLength := 0
 	if err != nil {
 		msg := "ERROR during encoding payload: " + err.Error()
-		return j.retryHTTPCommunication(operationName, protocol, method, path, targetNode, payload, msg, retryInterval, retryCnt+1, retryLimitation, timestampSending)
+		return j.retryHTTPCommunication(operationName, protocol, method, path, targetNode, payload, msg, retryInterval, retryCnt+1, retryLimitation)
 	}
 	reqLength = len(reqbody)
 	targetURL := protocol + "://" + targetNode.Key() + path
@@ -72,24 +67,16 @@ func (j *JadeSDK) HTTPCommunicate(
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("retry-count", strconv.Itoa(retryCnt))
 	client := &http.Client{}
-	timestampStart := time.Now()
 	res, err := client.Do(req)
-	timestampEnd := time.Now()
-	durationOfTransmission := timestampEnd.Sub(timestampStart)
-
-	recordedTimestampSending := timestampStart
-	if !timestampSending.IsZero() && timestampStart.Sub(timestampSending) < time.Duration(1800)*time.Second{
-		recordedTimestampSending = timestampSending
-	}
 
 	if err != nil {
 		msg := "Error when sending http request: " + err.Error()
-		return j.retryHTTPCommunication(operationName, protocol, method, path, targetNode, payload, msg, retryInterval, retryCnt+1, retryLimitation, recordedTimestampSending)
+		return j.retryHTTPCommunication(operationName, protocol, method, path, targetNode, payload, msg, retryInterval, retryCnt+1, retryLimitation)
 	}
 
 	if res == nil || res.Body == nil {
 		msg := "Error of the communication for the response is nil"
-		return j.retryHTTPCommunication(operationName, protocol, method, path, targetNode, payload, msg, retryInterval, retryCnt+1, retryLimitation, recordedTimestampSending)
+		return j.retryHTTPCommunication(operationName, protocol, method, path, targetNode, payload, msg, retryInterval, retryCnt+1, retryLimitation)
 	}
 
 	// parse the response message of upper node for registering
@@ -97,14 +84,14 @@ func (j *JadeSDK) HTTPCommunicate(
 	json.NewDecoder(res.Body).Decode(&resMsg)
 	if resMsg.Error != "" {
 		msg := "target node responded ERROR message: " + resMsg.Error
-		return j.retryHTTPCommunication(operationName, protocol, method, path, targetNode, payload, msg, retryInterval, retryCnt+1, retryLimitation, recordedTimestampSending)
+		return j.retryHTTPCommunication(operationName, protocol, method, path, targetNode, payload, msg, retryInterval, retryCnt+1, retryLimitation)
 	} else {
 		if resMsg.Status == "OK" {
 			j.log.Println("[comm] "+operationName+" completed with target node:", targetNode.Key())
-			return resMsg.Payload, reqLength, recordedTimestampSending, durationOfTransmission, nil
+			return resMsg.Payload, reqLength, nil
 		} else {
 			msg := "target node responded abnormal status: " + resMsg.Status
-			return j.retryHTTPCommunication(operationName, protocol, method, path, targetNode, payload, msg, retryInterval, retryCnt+1, retryLimitation, recordedTimestampSending)
+			return j.retryHTTPCommunication(operationName, protocol, method, path, targetNode, payload, msg, retryInterval, retryCnt+1, retryLimitation)
 		}
 	}
 }
