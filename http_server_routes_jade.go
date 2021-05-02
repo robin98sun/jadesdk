@@ -10,6 +10,7 @@ import (
 	// "fmt"
 	// "strconv"
 	// "strings"
+	"runtime"
 )
 
 func (j *JadeSDK) createJadeInterfaces() []*rest.Route {
@@ -41,6 +42,10 @@ func (j *JadeSDK) createJadeInterfaces() []*rest.Route {
 		}),
 		rest.Get("/$jade$/stat", func(w rest.ResponseWriter, r *rest.Request) {
 			w.WriteJson(newSuccessResponse(j.Stats))
+		}),
+		rest.Delete("/$jade$/GC", func(w rest.ResponseWriter, r *rest.Request) {
+			runtime.GC()
+			w.WriteJson(newSuccessResponse("OK"))
 		}),
 	}
 	return routes
