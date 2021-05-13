@@ -40,7 +40,11 @@ func (j *JadeSDK) CreateHTTPServer() {
 
 	// Build the RESTful server
 	api := rest.NewApi()
-	api.Use(rest.DefaultDevStack...)
+	if j.log.Enable {
+		api.Use(rest.DefaultDevStack...)
+	} else {
+		api.Use(rest.DefaultCommonStack...)
+	}
 	router, err := rest.MakeRouter(routes...)
 	if err != nil {
 		j.log.Fatal(err)
