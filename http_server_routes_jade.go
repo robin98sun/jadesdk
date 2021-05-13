@@ -30,12 +30,12 @@ func (j *JadeSDK) createJadeInterfaces() []*rest.Route {
 			}
 			if j.Conf != nil && j.Conf.Capabilities != nil && len(j.Conf.Capabilities) > 0 {
 				for i, cap := range j.Conf.Capabilities {
-					log.Print("capability[%v] name: %v, value: %v, api: %v, type: %v, action: %v, url: %v", 
+					j.log.Printf("capability[%v] name: %v, value: %v, api: %v, type: %v, action: %v, url: %v", 
 						i, cap.Name, cap.Value, cap.API, cap.Type, cap.Action, cap.URL,
 					)
 					if cap.Parameters != nil && len(cap.Parameters) > 0 {
-						for j, param := range cap.Parameters {
-							log.Print("   param[%v] name: %v, type: %v", j, param.Name, param.Type)
+						for k, param := range cap.Parameters {
+							j.log.Printf("   param[%v] name: %v, type: %v", k, param.Name, param.Type)
 						}
 					}
 				}
