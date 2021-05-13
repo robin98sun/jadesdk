@@ -24,11 +24,11 @@ type Param struct {
 // Examples:
 // {
 // 	"name": "location",
-// 	"api": ";static://NYC"
+// 	"api": ";value://NYC"
 // },
 // {
 // 	"name": "accuracy",
-// 	"api": ";static://city"
+// 	"api": ";value://city"
 // },
 // {
 // 	"name": "avg_temperature",
@@ -49,7 +49,7 @@ func NewCapability() *Capability {
 
 // IsStatic tells whether a capability contain a static value
 func (c *Capability) IsStatic() bool {
-	if c.API != "" && c.API[0:9] == ":static://" {
+	if c.API != "" && c.API[0:9] == ":value://" {
 		return true
 	}
 	return false
@@ -62,7 +62,7 @@ func (c *Capability) MiniCapability() *Capability {
 			Name: c.Name,
 			API:  c.API,
 		}
-	} else if c.Type == "static" {
+	} else if c.Type == "value" {
 		return &Capability{
 			Name:  c.Name,
 			Value: c.Value,
