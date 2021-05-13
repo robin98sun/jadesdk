@@ -24,19 +24,19 @@ type Param struct {
 // Examples:
 // {
 // 	"name": "location",
-// 	"api": ":static://NYC"
+// 	"api": ";static://NYC"
 // },
 // {
 // 	"name": "accuracy",
-// 	"api": ":static://city"
+// 	"api": ";static://city"
 // },
 // {
 // 	"name": "avg_temperature",
-// 	"api": "get:http://176.0.0.3/temperature:timespan=int"
+// 	"api": "get;http://176.0.0.3/temperature;timespan=int"
 // },
 // {
 // 	"name": "current_temperature",
-// 	"api": "get:http://176.0.0.3/temperature"
+// 	"api": "get;http://176.0.0.3/temperature"
 // }
 
 // NewCapability construct a capability instance with default values
@@ -79,21 +79,27 @@ func (c *Capability) ParseAPI() {
 	if c.API == "" {
 		return
 	}
-	parts := strings.Split(c.API, ":")
-	if len(parts) < 3 {
+	parts := strings.Split(c.API, ";")
+	if len(parts) < 2 {
 		return
 	}
-	c.Type = parts[1]
-	if c.Type == "static" {
-		c.Value = parts[2]
+	tmpUrl := parts[1]
+	tmpParts := strings.Split(tmpUrl, ":")
+
+	if len(tmpParts) < 2 {
+		return
+	}
+	c.Type = tmpParts[0]
+	if c.Type == "value" {
+		c.Value = tmpParts[1]
 		if len(c.Value) > 2 && c.Value[0:2] == "//" {
 			c.Value = c.Value[2:]
 		}
 	} else {
 		c.Action = parts[0]
-		c.URL = parts[1] + ":" + parts[2]
-		if len(parts) > 3 {
-			params := parts[3]
+		c.URL = tmpUrl
+		if len(parts) > 2 {
+			params := parts[2]
 			paramsParts := strings.Split(params, ",")
 			for _, paramStr := range paramsParts {
 				paramstrParts := strings.Split(paramStr, "=")
