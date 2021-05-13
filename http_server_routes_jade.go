@@ -39,6 +39,12 @@ func (j *JadeSDK) createJadeInterfaces() []*rest.Route {
 						}
 					}
 				}
+			} else if j.Conf == nil {
+				j.log.Println("ERROR: configuration is nil when updated")
+			} else if j.Conf.Capabilities == nil {
+				j.log.Println("ERROR: capabilities is nil when configuration is updated")
+			} else if len(j.Conf.Capabilities) == 0 {
+				j.log.Println("WARNING: capabilities is empty when configuration is updated")
 			}
 			j.Unlock()
 			w.WriteJson(newSuccessResponse(j.Status))
