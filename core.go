@@ -158,7 +158,9 @@ func (j *JadeSDK) UpdateAPIs() {
 			// capture APIs
 			if cap.Name == "jade-addon-env-metrics" {
 				metricsEnvApi = cap
-				j.log.Printf("==>captured API for MetricsEnv, action: %v, URL: %v", cap.Action, cap.URL)
+				j.log.Printf("==>captured API for MetricsEnv, action: %v, URL: %v, type: %v", 
+					cap.Action, cap.URL, cap.Type,
+				)
 			}
 		}
 	}
