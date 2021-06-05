@@ -26,6 +26,7 @@ type JadeSDK struct {
 	AllowSelfCycle       bool
 	Stats                map[string]*Stat
 	AggregativeTaskCache *AggregativeTaskCache
+	Addons 				 *Addons
 }
 
 func NewJadeSDK() *JadeSDK {
@@ -37,6 +38,7 @@ func NewJadeSDK() *JadeSDK {
 		AggregatorModules:    map[string]AggregatorModuleInstance{},
 		Stats:                map[string]*Stat{},
 		AggregativeTaskCache: NewAggregativeTaskCache(),
+		Addons:               NewAddons(),
 	}
 }
 
@@ -134,4 +136,29 @@ func (j *JadeSDK) GetSelfInterface(moduleName string) *Interface {
 
 func (j *JadeSDK) ModuleCount() int {
 	return len(j.WorkerModules) + len(j.AggregatorModules)
+}
+
+func (j *JadeSDK) UpdateAPIs() {
+	if j == nil || j.Conf == nil || j.Conf.Capabilities == nil || len(j.Conf.Capabilities) == 0 {
+		return
+	}
+	// log & inspect the capabilities (APIs)
+	// prepare APIs
+	var metricsEnvApi *Capability
+	for i, cap := range j.Conf.Capabilities {
+		j.log.Printf("capability[%v] name: %v, value: %v, api: %v, type: %v, action: %v, url: %v", 
+			i, cap.Name, cap.Value, cap.API, cap.Type, cap.Action, cap.URL,
+		)
+		if cap.Parameters != nil && len(cap.Parameters) > 0 {
+			for k, param := range cap.Parameters {
+				j.log.Printf("   param[%v] name: %v, type: %v", k, param.Name, param.Type)
+			}
+		}
+		// capture APIs
+		if cap.Name == "jade-addon-env-metrics" {
+			metricsEnvApi = cap
+		}
+	}
+	// update APIs
+	j.Addons.UpdateMetricsEnvAPI(metricsEnvApi)
 }

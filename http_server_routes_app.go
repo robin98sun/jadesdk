@@ -166,6 +166,7 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 				var reportTo []*Interface
 				// report to upper tier aggregators
 				if moduleType == AppModuleAggregator {
+					// TODO: task could be nil
 					reportTo = j.AggregativeTaskCache.GetReportTo(task.TaskID)
 				}
 				if len(req.To) > 0 {

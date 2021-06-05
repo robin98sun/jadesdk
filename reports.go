@@ -12,6 +12,7 @@ type ReportMessage struct {
 	Stat       *StatItem `json:"stat,omitempty"`
 	Status     string    `json:"status,omitempty"`
 	Node       *Node     `json:"node,omitempty"`
+	MetricsEnv *MetricsEnv `json:"metricsEnv,omitempty"`
 }
 
 func (j *JadeSDK) reportToMaster(task *Task, updates *Response, doneOrFail bool, stat *StatItem) (interface{}, int, error) {
@@ -25,6 +26,7 @@ func (j *JadeSDK) reportToMaster(task *Task, updates *Response, doneOrFail bool,
 		Updates:    updates,
 		Stat:       stat,
 		Node:       j.Conf.SelfNode,
+		MetricsEnv: j.Addons.GetMetricsEnv(),
 	}
 	if doneOrFail {
 		msg.Status = "done"

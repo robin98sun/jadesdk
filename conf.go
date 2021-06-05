@@ -36,6 +36,7 @@ func (j *JadeSDK) ReadConfFromEnv() *Conf {
 	conf.AppVersion = os.Getenv("JADE_APP_VERSION")
 	conf.Capabilities = ReadCapabilitiesFromEnv()
 	j.Conf = conf
+	j.UpdateAPIs()
 	return conf
 }
 

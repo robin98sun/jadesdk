@@ -29,16 +29,7 @@ func (j *JadeSDK) createJadeInterfaces() []*rest.Route {
 				j.Conf.Merge(conf)
 			}
 			if j.Conf != nil && j.Conf.Capabilities != nil && len(j.Conf.Capabilities) > 0 {
-				for i, cap := range j.Conf.Capabilities {
-					j.log.Printf("capability[%v] name: %v, value: %v, api: %v, type: %v, action: %v, url: %v", 
-						i, cap.Name, cap.Value, cap.API, cap.Type, cap.Action, cap.URL,
-					)
-					if cap.Parameters != nil && len(cap.Parameters) > 0 {
-						for k, param := range cap.Parameters {
-							j.log.Printf("   param[%v] name: %v, type: %v", k, param.Name, param.Type)
-						}
-					}
-				}
+				j.UpdateAPIs()
 			} else if j.Conf == nil {
 				j.log.Println("ERROR: configuration is nil when updated")
 			} else if j.Conf.Capabilities == nil {
