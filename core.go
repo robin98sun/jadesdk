@@ -139,24 +139,27 @@ func (j *JadeSDK) ModuleCount() int {
 }
 
 func (j *JadeSDK) UpdateAPIs() {
-	if j == nil || j.Conf == nil || j.Conf.Capabilities == nil || len(j.Conf.Capabilities) == 0 {
+	if j == nil {
 		return
 	}
-	// log & inspect the capabilities (APIs)
-	// prepare APIs
 	var metricsEnvApi *Capability
-	for i, cap := range j.Conf.Capabilities {
-		j.log.Printf("capability[%v] name: %v, value: %v, api: %v, type: %v, action: %v, url: %v", 
-			i, cap.Name, cap.Value, cap.API, cap.Type, cap.Action, cap.URL,
-		)
-		if cap.Parameters != nil && len(cap.Parameters) > 0 {
-			for k, param := range cap.Parameters {
-				j.log.Printf("   param[%v] name: %v, type: %v", k, param.Name, param.Type)
+	if j.Conf != nil && j.Conf.Capabilities != nil && len(j.Conf.Capabilities) > 0 {
+		// log & inspect the capabilities (APIs)
+		// prepare APIs
+		for i, cap := range j.Conf.Capabilities {
+			j.log.Printf("capability[%v] name: %v, value: %v, api: %v, type: %v, action: %v, url: %v", 
+				i, cap.Name, cap.Value, cap.API, cap.Type, cap.Action, cap.URL,
+			)
+			if cap.Parameters != nil && len(cap.Parameters) > 0 {
+				for k, param := range cap.Parameters {
+					j.log.Printf("   param[%v] name: %v, type: %v", k, param.Name, param.Type)
+				}
 			}
-		}
-		// capture APIs
-		if cap.Name == "jade-addon-env-metrics" {
-			metricsEnvApi = cap
+			// capture APIs
+			if cap.Name == "jade-addon-env-metrics" {
+				metricsEnvApi = cap
+				j.log.Printf("==>captured API for MetricsEnv, action: %v, URL: %v", cap.Action, cap.URL)
+			}
 		}
 	}
 	// update APIs

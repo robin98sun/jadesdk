@@ -28,8 +28,9 @@ func (j *JadeSDK) createJadeInterfaces() []*rest.Route {
 			} else {
 				j.Conf.Merge(conf)
 			}
+			j.UpdateAPIs()
 			if j.Conf != nil && j.Conf.Capabilities != nil && len(j.Conf.Capabilities) > 0 {
-				j.UpdateAPIs()
+				
 			} else if j.Conf == nil {
 				j.log.Println("ERROR: configuration is nil when updated")
 			} else if j.Conf.Capabilities == nil {
