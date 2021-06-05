@@ -79,16 +79,14 @@ func (a *Addons) FetchMetricsEnv() {
 		res, err := client.Do(req)
 		if err != nil {
 			a.MetricsEnvData = nil
-		}
-
-		if res == nil || res.Body == nil {
+		} else if res == nil || res.Body == nil {
 			a.MetricsEnvData = nil
+		} else {
+			// parse the response message of upper node for registering
+			resMsg := MetricsEnv{}
+			json.NewDecoder(res.Body).Decode(&resMsg)
+
+			a.MetricsEnvData = &resMsg
 		}
-
-		// parse the response message of upper node for registering
-		resMsg := MetricsEnv{}
-		json.NewDecoder(res.Body).Decode(&resMsg)
-
-		a.MetricsEnvData = &resMsg
 	}
 }
