@@ -71,7 +71,6 @@ func (a *Addons) FetchMetricsEnv() {
 		return
 	}
 
-
 	if strings.ToLower(a.MetricsEnvAPI.Type) == "http" {
 		// Send the register information to MetricsEnv service
 		req, err := http.NewRequest(strings.ToUpper(a.MetricsEnvAPI.Action), a.MetricsEnvAPI.URL, nil)
