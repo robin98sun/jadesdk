@@ -50,6 +50,6 @@ func (j *JadeSDK) CreateHTTPServer() {
 		j.log.Fatal(err)
 	}
 	api.SetApp(router)
-	fmt.Println("plankton is listening on port", port)
+	fmt.Println("JADESDK is listening on port", port)
 	j.log.Fatal(http.ListenAndServe(addr+":"+strconv.Itoa(port), api.MakeHandler()))
 }
