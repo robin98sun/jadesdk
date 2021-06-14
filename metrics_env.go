@@ -46,4 +46,9 @@ type MetricsEnv struct {
 		Runnable int64 `json:"r,omitempty"`
 		Sleeping int64 `json:"cpu,omitempty"`
 	} `json:"PROCS,omitempty"`
+
+	Voltage *struct{
+		Core int64 `json:"core,omitempty"`
+		Sdram int64 `json:"sdram,omitempty"`
+	} `json:"VOLTAGE,omitempty"`
 }
