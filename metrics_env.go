@@ -48,7 +48,7 @@ type MetricsEnv struct {
 	} `json:"PROCS,omitempty"`
 
 	Voltage *struct{
-		Core int64 `json:"core,omitempty"`
-		Sdram int64 `json:"sdram,omitempty"`
+		Core float64 `json:"core,omitempty"`
+		Sdram float64 `json:"sdram,omitempty"`
 	} `json:"VOLTAGE,omitempty"`
 }
