@@ -167,7 +167,18 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 				// report to upper tier aggregators
 				if moduleType == AppModuleAggregator {
 					// TODO: task could be nil only in aggregator
-					reportTo = j.AggregativeTaskCache.GetReportTo(task.TaskID)
+					lmt := 10
+					for i:=0; i<lmt; i++ {
+						if task == nil {
+							j.log.Println("WARNING: task is nil when trying to get the 'reportTo' info via TaskID")
+							continue
+						}
+						if j.AggregativeTaskCache == nil {
+							j.log.Println("WARNING: j.AggregativeTaskCache is nil when trying to get the 'reportTo' info via TaskID")
+							continue
+						}
+						reportTo = j.AggregativeTaskCache.GetReportTo(task.TaskID)
+					}
 				}
 				if len(req.To) > 0 {
 					reportTo = append(reportTo, req.To...)
