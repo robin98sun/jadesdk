@@ -78,8 +78,9 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 				if req.Options != nil && req.Options.EstimatedServiceTime > 0 {
 					// backdoor for fake service time
 					time.Sleep(time.Duration(req.Options.EstimatedServiceTime) * time.Millisecond)
-					j.log.Printf("running in simlation mode, sleep %v milliseconds according to the service time setting", req.Options.EstimatedServiceTime)
+					j.log.Printf("[%v] running in simlation mode, sleep %v milliseconds according to the service time setting", moduleName, req.Options.EstimatedServiceTime)
 				} else {
+					j.log.Printf("[%v] running in normal mode, the input is consumed by the handler", moduleName)
 					result, err = moduleInst.(WorkerModuleInstance).Handler(input)
 				}
 			} else if moduleType == AppModuleAggregator {
