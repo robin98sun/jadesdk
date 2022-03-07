@@ -66,7 +66,9 @@ func (j *JadeSDK) HTTPCommunicate(
 	req, err := http.NewRequest(strings.ToUpper(method), targetURL, bytes.NewBuffer(reqbody))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("retry-count", strconv.Itoa(retryCnt))
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
 	res, err := client.Do(req)
 
 	if err != nil {
