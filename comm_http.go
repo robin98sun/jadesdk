@@ -67,7 +67,7 @@ func (j *JadeSDK) HTTPCommunicate(
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("retry-count", strconv.Itoa(retryCnt))
 	client := &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: 30 * time.Second,
 	}
 	res, err := client.Do(req)
 
