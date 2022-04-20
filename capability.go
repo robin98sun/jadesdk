@@ -57,6 +57,9 @@ func (c *Capability) IsStatic() bool {
 
 // MiniCapability generate a mini instance to transfer in the network
 func (c *Capability) MiniCapability() *Capability {
+	if c == nil {
+		return NewCapability()
+	}
 	if c.Type == "" {
 		return &Capability{
 			Name: c.Name,
