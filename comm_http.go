@@ -85,7 +85,7 @@ func (j *JadeSDK) HTTPCommunicate(
 	}
 
 	// parse the response message of upper node for registering
-	resMsg := Response{}
+	resMsg := &Response{}
 	// json.NewDecoder(res.Body).Decode(&resMsg)
 	content, err := DecodeRequestWithoutClosing(res, resMsg)
 	if err != nil {
