@@ -21,6 +21,16 @@ type Param struct {
 	Type string `json:"type,omitempty"`
 }
 
+func (c *Capability) GetKey() string {
+	key := c.Name + ";" + c.API + ";" + c.Type + ";" + c.Action + ";" + c.Value + ";" + c.URL
+	if len(c.Parameters) > 0 {
+		for _, p := range c.Parameters {
+			key += ";" + p.Name + ":" + p.Type
+		}
+	}
+	return key
+}
+
 // Examples:
 // {
 // 	"name": "location",
