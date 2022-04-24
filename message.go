@@ -53,7 +53,7 @@ func (j *JadeSDK) sendMessages(task *Task, from *Interface, to []*Interface, mes
 		if !i.IsValid() {
 			continue
 		}
-		_, reqlen, err := j.HTTPCommunicate(
+		_, reqlen, _, err := j.HTTPCommunicate(
 			"send message to "+i.Key(),
 			"http", "POST", "/"+i.ModuleName, i.Node,
 			&Request{

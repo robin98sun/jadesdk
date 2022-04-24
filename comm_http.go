@@ -1,6 +1,7 @@
 package jadesdk
 
 import (
+	"fmt"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -8,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	// "github.com/ant0ine/go-json-rest/rest"
+	"io/ioutil"
 )
 
 const (
@@ -19,9 +22,9 @@ func (j *JadeSDK) retryHTTPCommunication(
 	op string, protocol string, method string, path string, targetNode *Node, 
 	payload interface{}, logMsg string, seconds int, 
 	retryCnt int, retrylimitation int,
-) (interface{}, int, error) {
+) (interface{}, int, []byte, error) {
 	if retrylimitation >= 0 && retryCnt > retrylimitation {
-		return nil, 0, errors.New(logMsg)
+		return nil, 0, nil, errors.New(logMsg)
 	}
 	if logMsg != "" {
 		j.log.Println(logMsg, "; going to retry ["+op+"] for the {"+strconv.Itoa(retryCnt)+"}th time in", seconds, "seconds...")
@@ -40,11 +43,11 @@ func (j *JadeSDK) HTTPCommunicate(
 	operationName string, protocol string, method string, path string, targetNode *Node, 
 	payload interface{}, 
 	retryCnt int, retryLimitation int,
-) (interface{}, int, error) {
+) (interface{}, int, []byte, error) {
 	if targetNode == nil || (strings.ToLower(protocol) != "http" && strings.ToLower(protocol) != "https") {
 		msg := "ERROR: invalid target node for " + operationName
 		j.log.Println(msg)
-		return nil, 0, errors.New(msg)
+		return nil, 0, nil, errors.New(msg)
 	}
 	retryInterval := RetryIntervalShort
 
@@ -83,17 +86,36 @@ func (j *JadeSDK) HTTPCommunicate(
 
 	// parse the response message of upper node for registering
 	resMsg := Response{}
-	json.NewDecoder(res.Body).Decode(&resMsg)
-	if resMsg.Error != "" {
-		msg := "target node responded ERROR message: " + resMsg.Error
+	// json.NewDecoder(res.Body).Decode(&resMsg)
+	content, err := DecodeRequestWithoutClosing(res, resMsg)
+	if err != nil {
+		msg := fmt.Sprintf("can not decode response body: %v", err)
 		return j.retryHTTPCommunication(operationName, protocol, method, path, targetNode, payload, msg, retryInterval, retryCnt+1, retryLimitation)
-	} else {
-		if resMsg.Status == "OK" {
-			j.log.Println("[comm] "+operationName+" completed with target node:", targetNode.Key())
-			return resMsg.Payload, reqLength, nil
-		} else {
-			msg := "target node responded abnormal status: " + resMsg.Status
-			return j.retryHTTPCommunication(operationName, protocol, method, path, targetNode, payload, msg, retryInterval, retryCnt+1, retryLimitation)
-		}
+	} else if resMsg.Error != "" {
+		msg := fmt.Sprintf("target node responded ERROR message: %v", resMsg.Error)
+		return j.retryHTTPCommunication(operationName, protocol, method, path, targetNode, payload, msg, retryInterval, retryCnt+1, retryLimitation)
+	} else if resMsg.Status != "OK" {
+		msg := "target node responded abnormal status: " + resMsg.Status
+		return j.retryHTTPCommunication(operationName, protocol, method, path, targetNode, payload, msg, retryInterval, retryCnt+1, retryLimitation)
 	}
+	j.log.Println("[comm] "+operationName+" completed with target node:", targetNode.Key())
+	return resMsg.Payload, reqLength, content, nil
 }
+
+func DecodeRequestWithoutClosing(r *http.Response, v interface{}) ([]byte, error) {
+	content, err := ioutil.ReadAll(r.Body)
+	r.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+	if len(content) == 0 {
+		return nil, errors.New("JSON payload is empty")
+	}
+	err = json.Unmarshal(content, v)
+	if err != nil {
+		return nil, err
+	}
+	return content, nil
+}
+
+
