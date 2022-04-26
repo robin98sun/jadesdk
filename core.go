@@ -142,6 +142,22 @@ func (j *JadeSDK) UpdateAPIs() {
 	if j == nil {
 		return
 	}
+	if j.Conf != nil && j.Conf.MasterNode != nil {
+		j.log.Printf("the master node protocol: %v, addr: %v, port: %v",
+			j.Conf.MasterNode.Protocol,
+			j.Conf.MasterNode.Addr,
+			j.Conf.MasterNode.Port,
+		)
+	}
+
+	if j.Conf != nil && j.Conf.SelfNode != nil {
+		j.log.Printf("this node protocol: %v, addr: %v, port: %v",
+			j.Conf.SelfNode.Protocol,
+			j.Conf.SelfNode.Addr,
+			j.Conf.SelfNode.Port,
+		)
+	}
+
 	var metricsEnvApi *Capability
 	if j.Conf != nil && j.Conf.Capabilities != nil && len(j.Conf.Capabilities) > 0 {
 		// log & inspect the capabilities (APIs)
