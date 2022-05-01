@@ -206,38 +206,42 @@ func AnyCapabilityMissing(availableList []*Capability, requiredList []*Capabilit
 	return false
 }
 
-func ReadCapabilitiesFromEnv() []*Capability {
-	capalist := []*Capability{}
+func ReadCapabilitiesFromEnv() map[string][]*Capability {
+	cap_set := make(map[string][]*Capability)
 	for _, e := range os.Environ() {
 		pair := strings.SplitN(e, "=", 2)
 		envName := pair[0]
 		envValue := pair[1]
 
 		nameParts := strings.SplitN(envName, "_", -1)
-		if len(nameParts) < 3 || nameParts[0] != "JADE" {
+		if len(nameParts) < 5 || nameParts[0] != "JADE" {
 			continue
 		}
-		if nameParts[1] == "CAPABILITY" && len(nameParts) == 4 {
-			i, err := strconv.Atoi(nameParts[2])
+		if nameParts[1] == "CAPABILITY" && len(nameParts) == 5 {
+			i, err := strconv.Atoi(nameParts[3])
 			if err == nil {
-				if i >= len(capalist) {
-					for x := len(capalist); x <= i; x++ {
+				cap_type := strings.ToLower(nameParts[2])
+				if _, e := cap_set[cap_type]; !e {
+					cap_set[cap_type] = []*Capability{}
+				}
+				if i >= len(cap_set[cap_type]) {
+					for x := len(cap_set[cap_type]); x <= i; x++ {
 						capability := *NewCapability()
-						capalist = append(capalist, &capability)
+						cap_set[cap_type] = append(cap_set[cap_type], &capability)
 					}
 				}
-				switch nameParts[3] {
+				switch nameParts[4] {
 				case "NAME":
-					capalist[i].Name = envValue
+					cap_set[cap_type][i].Name = envValue
 				case "API":
-					capalist[i].API = envValue
+					cap_set[cap_type][i].API = envValue
 				}
-				capalist[i].ParseAPI()
+				cap_set[cap_type][i].ParseAPI()
 			}
 		}
 	}
-	if len(capalist) > 0 {
-		return capalist
+	if len(cap_set) > 0 {
+		return cap_set
 	}
 	return nil
 }

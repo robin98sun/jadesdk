@@ -34,7 +34,12 @@ func (j *JadeSDK) ReadConfFromEnv() *Conf {
 	conf.AppName = os.Getenv("JADE_APP_NAME")
 	conf.AppModule = os.Getenv("JADE_APP_MODULE")
 	conf.AppVersion = os.Getenv("JADE_APP_VERSION")
-	conf.Capabilities = ReadCapabilitiesFromEnv()
+
+	all_capabilities := []*Capability{}
+	for _, list := range ReadCapabilitiesFromEnv() {
+		all_capabilities = append(all_capabilities, list...)
+	}
+	conf.Capabilities = all_capabilities
 	j.Conf = conf
 	j.UpdateAPIs()
 	return conf
