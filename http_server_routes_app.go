@@ -168,10 +168,10 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 				// report to upper tier aggregators
 				if moduleType == AppModuleAggregator {
 					// TODO: task could be nil only in aggregator
-					lmt := 10
+					lmt := 100
 					for i:=0; i<lmt; i++ {
 						if task == nil {
-							j.log.Println("WARNING: task is nil when trying to get the 'reportTo' info via TaskID")
+							j.log.Printf("WARNING[%v]: task is nil when trying to get the 'reportTo' info via TaskID", i)
 							continue
 						}
 						if j.AggregativeTaskCache == nil {
@@ -201,10 +201,18 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 				if j.Conf.MasterNode.IsValid() {
 					j.log.Println(fmt.Sprintf("[%v] reporting app result to the master", moduleName))
 					if errorCache == nil {
-						j.reportToMaster(task, &Response{
-							Status:  "OK",
-							Payload: result,
-						}, true, oneOffStatItem)
+						lmt := 100
+						for i :=0; i<lmt; i++ {
+							if task == nil {
+								j.log.Printf("WARNING[%v]: task is nil when trying to report to the master", i)
+								continue
+							}
+							j.reportToMaster(task, &Response{
+								Status:  "OK",
+								Payload: result,
+							}, true, oneOffStatItem)
+						}
+						
 					} else {
 						errMsg := ""
 						for i, e := range errorCache {
