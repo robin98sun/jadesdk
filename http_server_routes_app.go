@@ -179,6 +179,7 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 							continue
 						}
 						reportTo = j.AggregativeTaskCache.GetReportTo(task.TaskID)
+						break
 					}
 				}
 				if len(req.To) > 0 {
@@ -211,6 +212,7 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 								Status:  "OK",
 								Payload: result,
 							}, true, oneOffStatItem)
+							break
 						}
 						
 					} else {
