@@ -235,8 +235,16 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 				}
 			}
 			// clear the task cache
-			if moduleType == AppModuleAggregator && j.AggregativeTaskCache.IsTaskDone(task.TaskID) {
-				j.AggregativeTaskCache.CleanTask(task.TaskID)
+			lmt := 100
+			for i:=0; i<lmt; i++ {
+				if task == nil {
+					j.log.Printf("WARNING[%v]: task is nil when trying to clean task by TaskID", i)
+					continue
+				}
+				if moduleType == AppModuleAggregator && j.AggregativeTaskCache.IsTaskDone(task.TaskID) {
+					j.AggregativeTaskCache.CleanTask(task.TaskID)
+				}
+				break
 			}
 		}
 		go taskThread()
