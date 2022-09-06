@@ -336,11 +336,11 @@ const (
 )
 
 type ObjWithTaskStatus struct {
-	status TaskStatus
+	Status TaskStatus
 }
 
 // utils
-func checkStatus(selfStatus TaskStatus, cache []*ObjWithTaskStatus) TaskStatus {
+func CheckTaskStatus(selfStatus TaskStatus, cache []*ObjWithTaskStatus) TaskStatus {
 	result := selfStatus
 	if selfStatus != TaskStatusDone &&
 		selfStatus != TaskStatusFailed &&
@@ -349,18 +349,18 @@ func checkStatus(selfStatus TaskStatus, cache []*ObjWithTaskStatus) TaskStatus {
 		// Need thread-safe read-lock
 		accepted, taskDone, rejected, taskFailed := true, true, false, false
 		for _, item := range cache {
-			if item.status != TaskStatusAccepted {
+			if item.Status != TaskStatusAccepted {
 				accepted = false
 			}
-			if item.status != TaskStatusDone {
+			if item.Status != TaskStatusDone {
 				taskDone = false
 			}
-			if item.status == TaskStatusRejected {
+			if item.Status == TaskStatusRejected {
 				rejected = true
 				taskDone = false
 				accepted = false
 			}
-			if item.status == TaskStatusFailed {
+			if item.Status == TaskStatusFailed {
 				taskDone = false
 				taskFailed = true
 			}
