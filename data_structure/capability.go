@@ -1,4 +1,4 @@
-package jadesdk
+package data_structure
 
 import (
 	"os"

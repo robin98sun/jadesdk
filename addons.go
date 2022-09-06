@@ -7,11 +7,12 @@ import (
 	"strings"
 	"encoding/json"
 	"net/http"
+	ds "uta.edu/aces/jadesdk/data_structure"
 )
 
 type Addons struct {
 	MetricsEnvData *MetricsEnv
-	MetricsEnvAPI *Capability
+	MetricsEnvAPI *ds.Capability
 	mutex *sync.Mutex
 	started bool
 }
@@ -35,7 +36,7 @@ func (a *Addons) GetMetricsEnv() *MetricsEnv {
 	return a.MetricsEnvData
 }
 
-func (a *Addons) UpdateMetricsEnvAPI( api *Capability) {
+func (a *Addons) UpdateMetricsEnvAPI( api *ds.Capability) {
 	a.Lock()
 	a.MetricsEnvAPI = api
 	a.Unlock()

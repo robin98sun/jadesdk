@@ -16,7 +16,7 @@ import (
 func (j *JadeSDK) createJadeInterfaces() []*rest.Route {
 	routes := []*rest.Route{
 		rest.Put("/$jade$/config", func(w rest.ResponseWriter, r *rest.Request) {
-			conf := &Conf{}
+			conf := &SDKConf{}
 			_, err := decodeRawRequestBody(r, conf)
 			if err != nil {
 				w.WriteJson(newErrorResponse(err.Error()))

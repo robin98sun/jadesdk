@@ -246,14 +246,14 @@ func (q *AggregativeTaskCache) GetAggregatorSubtaskKey(taskKey string) string {
 	return ""
 }
 
-func (q *AggregativeTaskCache) GetAggregatorTask(taskKey string) *Task {
+func (q *AggregativeTaskCache) GetAggregatorTask(taskKey string) *SDKTask {
 	if q == nil || len(q.Cache) == 0 {
 		return nil
 	}
 	q.Lock()
 	defer q.Unlock()
 	if taskItem, e := q.Cache[taskKey]; e {
-		return &Task{
+		return &SDKTask{
 			TaskID:     taskKey,
 			SubtaskID:  taskItem.SubtaskKey,
 			ModuleName: taskItem.ModuleName,

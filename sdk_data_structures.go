@@ -1,7 +1,8 @@
 package jadesdk
 
 import (
-	"fmt"
+	// "fmt"
+	ds "uta.edu/aces/jadesdk/data_structure"
 )
 
 type WorkerHandler func([]byte) (interface{}, error)
@@ -17,7 +18,7 @@ type AggregatorModuleInstance interface {
 	Handler(cumulation interface{}, resultsOfPreviousSubtasks []interface{}, resultOfCurrentSubtask interface{}) (interface{}, error)
 }
 
-type Task struct {
+type SDKTask struct {
 	ModuleName string `json:"moduleName,omitempty"`
 	TaskID     string `json:"taskId,omitempty"`
 	SubtaskID  string `json:"subtaskId,omitempty"`
@@ -25,7 +26,7 @@ type Task struct {
 }
 
 type Interface struct {
-	Node       *Node  `json:"node,omitempty"`
+	Node       *ds.Node  `json:"node,omitempty"`
 	ModuleName string `json:"moduleName,omitempty"`
 }
 
@@ -47,47 +48,47 @@ func (i *Interface) Equal(j *Interface) bool {
 	return i.Node.Equal(j.Node) && i.ModuleName == j.ModuleName
 }
 
-type Node struct {
-	Addr     string `json:"addr,omitempty"`
-	Port     int    `json:"port,omitempty"`
-	Protocol string `json:"protocol,omitempty"`
-}
+// type Node struct {
+// 	Addr     string `json:"addr,omitempty"`
+// 	Port     int    `json:"port,omitempty"`
+// 	Protocol string `json:"protocol,omitempty"`
+// }
 
-func (n *Node) Key() string {
-	return fmt.Sprintf("%v:%v", n.Addr, n.Port)
-}
+// func (n *Node) Key() string {
+// 	return fmt.Sprintf("%v:%v", n.Addr, n.Port)
+// }
 
-func (n *Node) Merge(newNode *Node) {
-	if n == nil || newNode == nil {
-		return
-	}
-	if newNode.Addr != "" {
-		n.Addr = newNode.Addr
-	}
-	if newNode.Port != 0 {
-		n.Port = newNode.Port
-	}
-	if newNode.Protocol != "" {
-		n.Protocol = newNode.Protocol
-	}
-}
+// func (n *Node) Merge(newNode *Node) {
+// 	if n == nil || newNode == nil {
+// 		return
+// 	}
+// 	if newNode.Addr != "" {
+// 		n.Addr = newNode.Addr
+// 	}
+// 	if newNode.Port != 0 {
+// 		n.Port = newNode.Port
+// 	}
+// 	if newNode.Protocol != "" {
+// 		n.Protocol = newNode.Protocol
+// 	}
+// }
 
-func (n *Node) IsValid() bool {
-	return n != nil && n.Addr != "" && n.Port > 0
-}
+// func (n *Node) IsValid() bool {
+// 	return n != nil && n.Addr != "" && n.Port > 0
+// }
 
-func (n *Node) Equal(m *Node) bool {
-	if n == nil || m == nil {
-		return false
-	} else if n == m {
-		return true
-	} else if n.Addr == m.Addr &&
-		n.Port == m.Port &&
-		n.Protocol == m.Protocol {
-		return true
-	}
-	return false
-}
+// func (n *Node) Equal(m *Node) bool {
+// 	if n == nil || m == nil {
+// 		return false
+// 	} else if n == m {
+// 		return true
+// 	} else if n.Addr == m.Addr &&
+// 		n.Port == m.Port &&
+// 		n.Protocol == m.Protocol {
+// 		return true
+// 	}
+// 	return false
+// }
 
 type AppModule string
 

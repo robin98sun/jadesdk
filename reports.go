@@ -3,6 +3,7 @@ package jadesdk
 import (
 	// "encoding/json"
 	"errors"
+	ds "uta.edu/aces/jadesdk/data_structure"
 )
 
 type ReportMessage struct {
@@ -11,11 +12,11 @@ type ReportMessage struct {
 	Updates    *Response `json:"updates,omitempty"`
 	Stat       *StatItem `json:"stat,omitempty"`
 	Status     string    `json:"status,omitempty"`
-	Node       *Node     `json:"node,omitempty"`
+	Node       *ds.Node     `json:"node,omitempty"`
 	MetricsEnv *MetricsEnv `json:"metricsEnv,omitempty"`
 }
 
-func (j *JadeSDK) reportToMaster(task *Task, updates *Response, doneOrFail bool, stat *StatItem) (interface{}, int, error) {
+func (j *JadeSDK) reportToMaster(task *SDKTask, updates *Response, doneOrFail bool, stat *StatItem) (interface{}, int, error) {
 	if !j.Conf.MasterNode.IsValid() {
 		j.log.Println("unable to report to master due to no valid master node")
 		return nil, 0, errors.New("unable to report to master due to no valid master node")
@@ -38,7 +39,7 @@ func (j *JadeSDK) reportToMaster(task *Task, updates *Response, doneOrFail bool,
 	
 }
 
-func (j *JadeSDK) SendReportMessageToJadelet(node *Node, msg *ReportMessage) (interface{}, int, error) {
+func (j *JadeSDK) SendReportMessageToJadelet(node *ds.Node, msg *ReportMessage) (interface{}, int, error) {
 	j.log.Println("reporting to master:", msg)
 	res, reqlen, _, err := j.HTTPCommunicate(
 		"report to master", "http", "put",

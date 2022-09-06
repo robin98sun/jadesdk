@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 	// "github.com/ant0ine/go-json-rest/rest"
+	ds "uta.edu/aces/jadesdk/data_structure"
 	"io/ioutil"
 )
 
@@ -19,7 +20,7 @@ const (
 )
 
 func (j *JadeSDK) retryHTTPCommunication(
-	op string, protocol string, method string, path string, targetNode *Node, 
+	op string, protocol string, method string, path string, targetNode *ds.Node, 
 	payload interface{}, logMsg string, seconds int, 
 	retryCnt int, retrylimitation int,
 ) (interface{}, int, []byte, error) {
@@ -40,7 +41,7 @@ func (j *JadeSDK) retryHTTPCommunication(
 //     the successful transmission duration
 //     error
 func (j *JadeSDK) HTTPCommunicate(
-	operationName string, protocol string, method string, path string, targetNode *Node, 
+	operationName string, protocol string, method string, path string, targetNode *ds.Node, 
 	payload interface{}, 
 	retryCnt int, retryLimitation int,
 ) (interface{}, int, []byte, error) {

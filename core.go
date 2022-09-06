@@ -2,6 +2,7 @@ package jadesdk
 
 import (
 	"sync"
+	ds "uta.edu/aces/jadesdk/data_structure"
 )
 
 type JadeSDKStatus string
@@ -17,7 +18,7 @@ const (
 )
 
 type JadeSDK struct {
-	Conf                 *Conf
+	Conf                 *SDKConf
 	Status               JadeSDKStatus
 	WorkerModules        map[string]WorkerModuleInstance
 	AggregatorModules    map[string]AggregatorModuleInstance
@@ -158,7 +159,7 @@ func (j *JadeSDK) UpdateAPIs() {
 		)
 	}
 
-	var metricsEnvApi *Capability
+	var metricsEnvApi *ds.Capability
 	if j.Conf != nil && j.Conf.Capabilities != nil && len(j.Conf.Capabilities) > 0 {
 		// log & inspect the capabilities (APIs)
 		// prepare APIs

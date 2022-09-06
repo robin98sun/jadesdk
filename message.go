@@ -2,6 +2,7 @@ package jadesdk
 
 import (
 // "encoding/json"
+	// ds "uta.edu/aces/jadesdk/data_structure"
 )
 
 type RequestOptions struct {
@@ -10,7 +11,7 @@ type RequestOptions struct {
 
 // Request message of request
 type Request struct {
-	Task    *Task           `json:"task,omitempty"`
+	Task    *SDKTask           `json:"task,omitempty"`
 	From    *Interface      `json:"from,omitempty"`
 	To      []*Interface    `json:"to,omitempty"`
 	Payload interface{}     `json:"payload,omitempty"`
@@ -46,7 +47,7 @@ func newErrorResponse(errMsg string) *Response {
 	}
 }
 
-func (j *JadeSDK) sendMessages(task *Task, from *Interface, to []*Interface, message interface{}, options *RequestOptions) (int, map[string]error) {
+func (j *JadeSDK) sendMessages(task *SDKTask, from *Interface, to []*Interface, message interface{}, options *RequestOptions) (int, map[string]error) {
 	errorCache := map[string]error{}
 	var requestLength int
 	for _, i := range to {
