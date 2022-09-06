@@ -1,5 +1,5 @@
 module uta.edu/aces/jadesdk
 
-go 1.15
+go 1.19
 
-require github.com/ant0ine/go-json-rest v3.3.2+incompatible
+require github.com/ant0ine/go-json-rest v3.3.2+incompatible // indirect
