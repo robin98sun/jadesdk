@@ -2,7 +2,7 @@ package jadesdk
 
 import (
 // "encoding/json"
-	// ds "uta.edu/aces/jadesdk/data_structure"
+	ds "uta.edu/aces/jadesdk/data_structure"
 )
 
 type RequestOptions struct {
@@ -78,3 +78,59 @@ func (j *JadeSDK) sendMessages(task *SDKTask, from *Interface, to []*Interface, 
 	}
 	return requestLength, errorCache
 }
+
+func NewAggregatorEnqueuingMessage(taskItem *ds.TaskDispatchingItem, subtasks []*ds.SubtaskOnNode) *AggregatorEnqueuingMessage {
+	inst := &AggregatorEnqueuingMessage{
+		TaskKey:  taskItem.Task.GetKey(),
+		Subtasks: []string{},
+		ReportTo: []*Interface{},
+	}
+	reportTo := taskItem.GetReportToForModule(string(ds.AppModuleAggregator))
+	if reportTo != nil && reportTo.Pod != nil {
+		inst.ReportTo = append(inst.ReportTo, &Interface{
+			Node: reportTo.Pod.GetNodeAddr(),
+			ModuleName: string(ds.AppModuleAggregator),
+		})
+	}
+	for _, item := range subtasks {
+		inst.Subtasks = append(inst.Subtasks, item.Subtask.GetKey())
+	}
+
+	return inst
+}
+
+func NewAggregativeWorkerTask(
+	taskItem *ds.TaskDispatchingItem,
+	worker *ds.SubtaskOnNode,
+	protocol string, input interface{}, estimatedServiceTime float64,
+) *Request {
+	task := taskItem.Task
+	reportTo := taskItem.GetReportToForModule(string(ds.AppModuleWorker))
+	if reportTo == nil || reportTo.Pod == nil {
+		return nil
+	}
+	req := &Request{
+		Task: &SDKTask{
+			ModuleName: string(ds.AppModuleWorker),
+			TaskID:     task.GetKey(),
+			SubtaskID:  worker.Subtask.GetKey(),
+		},
+		To: []*Interface{
+			&Interface{
+				Node: &ds.Node{
+					Addr:     reportTo.Pod.Addr,
+					Port:     reportTo.Pod.Port,
+					Protocol: protocol,
+				},
+				ModuleName: string(ds.AppModuleAggregator),
+			},
+		},
+		Payload: input,
+		Options: &RequestOptions{
+			EstimatedServiceTime: estimatedServiceTime,
+		},
+	}
+	return req
+}
+
+

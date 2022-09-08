@@ -9,6 +9,7 @@ type Pod struct {
 	NodeKey    string          `json:"nodeId,omitempty"`
 	Namespace  string          `json:"namespace,omitempty"`
 	PodName    string          `json:"podName,omitempty"`
+	Protocol   string          `json:"protocol,omitempty"`
 	Addr       string          `json:"addr,omitempty"`
 	Port       int             `json:"port,omitempty"`
 	Allocation *AllocationUnit `json:"allocation,omitempty"`
@@ -59,6 +60,14 @@ func (p *Pod) GetNodeRepresentation(protocol string) *Node {
 	node.Addr = p.Addr
 	node.Port = p.Port
 	node.Protocol = protocol
+	return node
+}
+
+func (p *Pod) GetNodeAddr() *Node {
+	node := NewNode()
+	node.Addr = p.Addr
+	node.Port = p.Port
+	node.Protocol = p.Protocol
 	return node
 }
 

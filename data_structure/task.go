@@ -17,7 +17,7 @@ type Task struct {
 	Requirements                *Requirements        `json:"requirements,omitempty"`
 	Key                         string               `json:"id,omitempty"`
 	SubtaskKey                  string               `json:"subtaskId,omitempty"`
-	PodKey                      string               `json:"podId,omitempty"`
+	QueueKey                    string               `json:"queueKey,omitempty"`
 	Subtasks                    map[string]*SubTask  `json:"subtasks,omitempty"`
 	NeighborNodes               map[string]*Node  `json:"neighborNodes,omitempty"`
 	MasterNode                  *Node                `json:"masterNode,omitempty"`
@@ -43,11 +43,11 @@ func (t *Task) GetKey() string {
 	return t.Key
 }
 
-func (t *Task) CreateSubtask(module string, nodeKey string, podKey string, subtaskKey string) *SubTask {
+func (t *Task) CreateSubtask(module string, nodeKey string, queueKey string, subtaskKey string) *SubTask {
 	if t == nil {
 		return nil
 	}
-	nst := NewSubtask(t.GetKey(), t.Application.Name, module, nodeKey, podKey, subtaskKey)
+	nst := NewSubtask(t.GetKey(), t.Application.Name, module, nodeKey, queueKey, subtaskKey)
 	if t.Subtasks == nil {
 		t.Subtasks = make(map[string]*SubTask)
 	}
@@ -94,4 +94,7 @@ func (t *Task) Valid() bool {
 	return true
 }
 
-
+type SubtaskOnNode struct {
+	Subtask *SubTask
+	Node    *Node
+}
