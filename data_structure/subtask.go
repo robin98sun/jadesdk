@@ -11,23 +11,22 @@ type SubTask struct {
 	ModuleName        string `json:"moduleName,omitempty"`
 	Fanout            int       `json:"fanout,omitempty"`
 	NodeKey           string    `json:"nodeId,omitempty"`
-	QueueKey 		  string    `json:"queueId,omitempty"`
+	ResourceKey 	  string    `json:"resourceId,omitempty"`
 }
 
 func (t *SubTask) GetKey() string {
 	if t.Key == "" {
-		t.Key = t.TaskKey + ":" + string(t.ModuleName) + ":" + t.NodeKey + ":" +t.QueueKey+ ":" + RandomString()
+		t.Key = t.TaskKey + ":" + string(t.ModuleName) + ":" + t.NodeKey + ":" + RandomString()
 	}
 	return t.Key
 }
 
-func NewSubtask(taskKey string, appName string, moduleName string, nodeKey string, queueKey string, subtaskKey string) *SubTask {
+func NewSubtask(taskKey string, appName string, moduleName string, nodeKey string, subtaskKey string) *SubTask {
 	newSubtask := &SubTask{
 		TaskKey:    taskKey,
 		AppName:    appName,
 		ModuleName: moduleName,
 		NodeKey:    nodeKey,
-		QueueKey:   queueKey,
 		Fanout:     1,
 	}
 	if subtaskKey == "" {
