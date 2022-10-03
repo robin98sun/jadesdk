@@ -66,6 +66,10 @@ func (j *JadeSDK) HTTPCommunicate(
 	}
 	reqLength = len(reqbody)
 	targetURL := protocol + "://" + targetNode.Key() + path
+	if strings.Contains(targetNode.Key(), ":") {
+		targetURL = targetNode.Key() + path
+	}
+	j.log.Println("[comm] <"+operationName+"> target url: %v, method: %v", targetURL, method)
 	// Send the register information to upper node
 	req, err := http.NewRequest(strings.ToUpper(method), targetURL, bytes.NewBuffer(reqbody))
 	req.Header.Set("Content-Type", "application/json")
