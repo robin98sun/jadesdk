@@ -194,7 +194,9 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 					j.Stats[moduleName].PackageSize.AddNumber(int64(reqlen))
 					oneOffStatItem.Forwarding = forwardingDuration
 					oneOffStatItem.PackageSize = int64(reqlen)
-					j.log.Println(fmt.Sprintf("[%v] forward to next hop completed in %v milliseconds", moduleName, forwardingDuration/time.Millisecond))
+					j.log.Println(fmt.Sprintf("[%v] forward to next hop completed in %v milliseconds", 
+							moduleName, forwardingDuration/time.Millisecond,
+					))
 					timePoint = timeForwarded
 				}
 
