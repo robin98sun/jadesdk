@@ -52,7 +52,7 @@ func (j *JadeSDK) sendMessages(task *SDKTask, from *Interface, to []*Interface, 
 	var requestLength int
 	for _, i := range to {
 		if !i.IsValid() {
-			j.log.Printf("the report to node %v is not valid", i)
+			j.log.Printf("the interface is not valid:", i)
 			continue
 		}
 		_, reqlen, _, err := j.HTTPCommunicate(
