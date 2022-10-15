@@ -21,7 +21,7 @@ func (t *SubTask) GetKey() string {
 	return t.Key
 }
 
-func NewSubtask(taskKey string, appName string, moduleName string, nodeKey string, subtaskKey string) *SubTask {
+func NewSubtask(taskKey string, appName string, moduleName string, nodeKey string, subtaskKey string, resourceKey string) *SubTask {
 	newSubtask := &SubTask{
 		TaskKey:    taskKey,
 		AppName:    appName,
@@ -34,5 +34,6 @@ func NewSubtask(taskKey string, appName string, moduleName string, nodeKey strin
 	} else {
 		newSubtask.Key = subtaskKey
 	}
+	newSubtask.ResourceKey = resourceKey
 	return newSubtask
 }
