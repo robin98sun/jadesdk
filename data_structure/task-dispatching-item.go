@@ -40,7 +40,7 @@ type TaskDispatchingOptions struct {
 	DispatchingRatePerSecond    float64 `json:"dispatchingRatePerSecond,omitempty"`
 	IsControlPlaneTask          bool `json:"isControlPlaneTask,omitempty"`
 	ForceToProvisionReplica     int  `json:"forceToProvisionReplica,omitempty"`
-	ForceToProvisionModuleName  string `json:"forceToProvisonModuleName,omitempty`
+	ForceToProvisionModuleName  string `json:"forceToProvisonModuleName,omitempty"`
 	ControlPlaneOptions			*ControlPlaneOptions `json:"controlPlaneOptions,omitempty"`
 }
 
