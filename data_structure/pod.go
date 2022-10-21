@@ -12,7 +12,7 @@ type Pod struct {
 	Protocol   string          `json:"protocol,omitempty"`
 	Addr       string          `json:"addr,omitempty"`
 	Port       int             `json:"port,omitempty"`
-	// Allocation *AllocationUnit `json:"allocation,omitempty"`
+	Allocation *AllocationUnit `json:"allocation,omitempty"`
 	Capacity   *Capacity       `json:"capacity,omitempty"`
 	AppKey     string          `json:"appId,omitempty"`
 	Container  *Container      `json:"container,omitempty"`
