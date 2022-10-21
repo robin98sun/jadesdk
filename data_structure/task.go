@@ -47,7 +47,7 @@ func (t *Task) CreateSubtask(module string, nodeKey string, resourceKey string, 
 	if t == nil {
 		return nil
 	}
-	nst := NewSubtask(t.GetKey(), t.Application.Name, module, nodeKey, resourceKey, subtaskKey)
+	nst := NewSubtask(t.GetKey(), t.Application.Key(), module, nodeKey, resourceKey, subtaskKey)
 	if t.Subtasks == nil {
 		t.Subtasks = make(map[string]*SubTask)
 	}

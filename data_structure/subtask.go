@@ -7,8 +7,8 @@ import (
 type SubTask struct {
 	TaskKey           string    `json:"taskId,omitempty"`
 	Key               string    `json:"key,omitempty"`
-	AppName           string    `json:"appName,omitempty"`
-	ModuleName        string `json:"moduleName,omitempty"`
+	AppKey            string    `json:"appKey,omitempty"`
+	ModuleName        string    `json:"moduleName,omitempty"`
 	Fanout            int       `json:"fanout,omitempty"`
 	NodeKey           string    `json:"nodeId,omitempty"`
 	ResourceKey 	  string    `json:"resourceId,omitempty"`
@@ -21,10 +21,10 @@ func (t *SubTask) GetKey() string {
 	return t.Key
 }
 
-func NewSubtask(taskKey string, appName string, moduleName string, nodeKey string, resourceKey string, subtaskKey string) *SubTask {
+func NewSubtask(taskKey string, appKey string, moduleName string, nodeKey string, resourceKey string, subtaskKey string) *SubTask {
 	newSubtask := &SubTask{
 		TaskKey:    taskKey,
-		AppName:    appName,
+		AppKey:     appKey,
 		ModuleName: moduleName,
 		NodeKey:    nodeKey,
 		Fanout:     1,
