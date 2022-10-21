@@ -39,6 +39,7 @@ type TaskDispatchingOptions struct {
 	ProvisionPodsIfNotExist     bool    `json:"provisionPodsIfNotExist,omitempty"`
 	DispatchingRatePerSecond    float64 `json:"dispatchingRatePerSecond,omitempty"`
 	IsControlPlaneTask          bool `json:"isControlPlaneTask,omitempty"`
+	ForceToProvisionReplica     int  `json:"forceToProvisionReplica,omitempty"`
 	ControlPlaneOptions			*ControlPlaneOptions `json:"controlPlaneOptions,omitempty"`
 }
 
