@@ -22,9 +22,7 @@ const (
 )
 
 type TaskDispatchingOptions struct {
-	ForceUpdateNetworkStructure bool   `json:"forceUpdateNetworkStructure,omitempty"`
 	SaveResultInCache         	bool   `json:"saveResultInCache,omitempty"`
-	PersistCache              	bool   `json:"persistCache,omitempty"`
 	EstimatedServiceTimeModel 	string `json:"estimatedServiceTimeModel,omitempty"` // "exponential"/"poission", "constant"
 	EstimatedMeanServiceTime  	float64  `json:"estimatedMeanServiceTime,omitempty"`  // for "exponential" / "poission"
 	ServiceTimeList        		[]float64 `json:"serviceTimeList,omitempty"` // in milliseconds
@@ -36,11 +34,19 @@ type TaskDispatchingOptions struct {
 	CDFStartPoint				float64 `json:"cdfStartPoint,omitempty"`
 	BudgetEstimationPercentilePoint float64 `json:"budgetEstimationPercentilePoint,omitempty"`
 	TaskCategories				[]string  `json:"taskCategories,omitempty"`
-	ProvisionPodsIfNotExist     bool    `json:"provisionPodsIfNotExist,omitempty"`
 	DispatchingRatePerSecond    float64 `json:"dispatchingRatePerSecond,omitempty"`
-	IsControlPlaneTask          bool `json:"isControlPlaneTask,omitempty"`
+
+	// resource provision options
+	ProvisionPodsIfNotExist     bool    `json:"provisionPodsIfNotExist,omitempty"`
+	ForceUpdateNetworkStructure bool   `json:"forceUpdateNetworkStructure,omitempty"`
 	ForceToProvisionReplica     int  `json:"forceToProvisionReplica,omitempty"`
 	ForceToProvisionModuleName  string `json:"forceToProvisonModuleName,omitempty"`
+
+	// resource allocation options
+	ReplicaPerNode              int `json:"replicaPerNode,omitempty"`
+
+	// control plane options
+	IsControlPlaneTask          bool `json:"isControlPlaneTask,omitempty"`
 	ControlPlaneOptions			*ControlPlaneOptions `json:"controlPlaneOptions,omitempty"`
 }
 
