@@ -39,11 +39,11 @@ type TaskDispatchingOptions struct {
 	// resource provision options
 	ProvisionPodsIfNotExist     bool    `json:"provisionPodsIfNotExist,omitempty"`
 	ForceUpdateNetworkStructure bool   `json:"forceUpdateNetworkStructure,omitempty"`
-	ForceToProvisionReplica     int  `json:"forceToProvisionReplica,omitempty"`
-	ForceToProvisionModuleName  string `json:"forceToProvisonModuleName,omitempty"`
+	ProvisionReplicaPerNode     int  `json:"provisionReplicaPerNode,omitempty"`
+	ProvisionModuleName  		string `json:"provisonModuleName,omitempty"`
 
 	// resource allocation options
-	ReplicaPerNode              int `json:"replicaPerNode,omitempty"`
+	SchedulableReplicaPerNode   int `json:"schedulableReplicaPerNode,omitempty"`
 
 	// control plane options
 	IsControlPlaneTask          bool `json:"isControlPlaneTask,omitempty"`
