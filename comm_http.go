@@ -65,9 +65,9 @@ func (j *JadeSDK) HTTPCommunicate(
 		return j.retryHTTPCommunication(operationName, protocol, method, path, targetNode, payload, msg, retryInterval, retryCnt+1, retryLimitation)
 	}
 	reqLength = len(reqbody)
-	targetURL := protocol + "://" + targetNode.Key() + path
-	if strings.Contains(targetNode.Key(), ":") {
-		targetURL = targetNode.Key() + path
+	targetURL := protocol + "://" + targetNode.URL() + path
+	if strings.Contains(targetNode.URL(), ":") {
+		targetURL = targetNode.URL() + path
 	}
 	j.log.Printf("[comm] <"+operationName+"> target url: %v, method: %v", targetURL, method)
 	// Send the register information to upper node

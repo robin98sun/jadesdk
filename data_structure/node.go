@@ -92,8 +92,17 @@ func (n *Node) IsAddrEmpty() bool {
 
 // URL is the base http/https url for the node to access
 func (n *Node) URL() string {
-	if n.Addr != "" && n.Port != 0 {
+	if n.Addr != "" && n.Port != 0 && n.Protocol != "" {
 		return n.Protocol + "://" + n.Addr + ":" + strconv.Itoa(n.Port)
+	} else if n.Addr != "" && n.Port != 0 {
+		return n.Addr + ":" + strconv.Itoa(n.Port)
+	}
+	return ""
+}
+
+func (n *Node) GetAddr() string {
+	if n.Addr != "" && n.Port != 0 {
+		return n.Addr + ":" + strconv.Itoa(n.Port)
 	}
 	return ""
 }
