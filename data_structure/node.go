@@ -74,7 +74,7 @@ func (n *Node) GetSDKNode() *Node {
 // Key is used to store node in cache
 func (n *Node) Key() string {
 	if !n.IsAddrEmpty() {
-		return "["+n.Protocol + "](hostname:" + n.Hostname + ")(addr:" + n.Addr + ")(port:" + strconv.Itoa(n.Port)+")"
+		return "("+n.Protocol + ")(hostname:" + n.Hostname + ")(addr:" + n.Addr + ")(port:" + strconv.Itoa(n.Port)+")"
 	} else if n.Hostname != "" && n.Namespace != "" && n.PodName != "" {
 		return n.Hostname + ":" + n.Namespace + ":" + n.PodName
 	}
@@ -87,7 +87,7 @@ func (n *Node) GetKey() string {
 
 // IsAddrEmpty tells whether a node address is meaningless
 func (n *Node) IsAddrEmpty() bool {
-	return n.Addr == "" && n.Hostname == ""
+	return n.Addr == "" || n.Port == 0
 }
 
 // URL is the base http/https url for the node to access
