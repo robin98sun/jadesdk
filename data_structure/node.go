@@ -107,7 +107,7 @@ func (n *Node) Desc() string {
 // MiniNode is to get a copy of minimum content to transfer on the network
 func (n *Node) MiniNode() *Node {
 	return &Node{
-		Hostname: n.Namespace,
+		Hostname: n.Hostname,
 		Addr:  n.Addr,
 		Port:     n.Port,
 		Protocol: n.Protocol,
