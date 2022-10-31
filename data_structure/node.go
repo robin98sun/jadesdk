@@ -100,16 +100,14 @@ func (n *Node) URL() string {
 	return ""
 }
 
-func (n *Node) GetAddr() string {
-	if n.Addr != "" && n.Port != 0 {
-		return n.Addr + ":" + strconv.Itoa(n.Port)
-	}
-	return ""
+func (n *Node) Desc() string {
+	return "("+n.Protocol+")(hostname:"+n.Hostname+")(addr:"+n.Addr+")(port:"+strconv.Itoa(n.Port)+")"
 }
 
 // MiniNode is to get a copy of minimum content to transfer on the network
 func (n *Node) MiniNode() *Node {
 	return &Node{
+		Hostname: n.Namespace,
 		Addr:  n.Addr,
 		Port:     n.Port,
 		Protocol: n.Protocol,

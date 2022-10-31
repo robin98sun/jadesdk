@@ -56,7 +56,7 @@ func (j *JadeSDK) HTTPCommunicate(
 	if retryCnt > 0 {
 		tailstr = ", retry count: " + strconv.Itoa(retryCnt)
 	}
-	j.log.Println("[comm] <"+operationName+"> started toward target node:", targetNode.Key(), tailstr)
+	j.log.Println("[comm] <"+operationName+"> started toward target node:", targetNode.Desc(), tailstr)
 
 	reqbody, err := json.Marshal(payload)
 	reqLength := 0
@@ -103,7 +103,7 @@ func (j *JadeSDK) HTTPCommunicate(
 		msg := "target node responded abnormal status: " + resMsg.Status
 		return j.retryHTTPCommunication(operationName, protocol, method, path, targetNode, payload, msg, retryInterval, retryCnt+1, retryLimitation)
 	}
-	j.log.Println("[comm] "+operationName+" completed with target node:", targetNode.Key())
+	j.log.Println("[comm] "+operationName+" completed with target node:", targetNode.Desc())
 	return resMsg.Payload, reqLength, content, nil
 }
 
