@@ -342,14 +342,14 @@ type TaskStatus string
 
 const (
 	TaskStatusAccepted TaskStatus = "accepted"
-	TaskStatusRejected            = "rejected"
-	TaskStatusDone                = "done"
-	TaskStatusRunning             = "running"
-	TaskStatusAggregatorReady     = "aggregator_ready"
-	TaskStatusWorkerReady         = "worker_ready"
-	TaskStatusPending             = "pending"
-	TaskStatusFailed              = "failed"
-	TaskStatusInvalid             = "invalid"
+	TaskStatusRejected TaskStatus = "rejected"
+	TaskStatusDone     TaskStatus = "done"
+	TaskStatusRunning  TaskStatus = "running"
+	TaskStatusAggregatorReady TaskStatus = "aggregator_ready"
+	TaskStatusWorkerReady TaskStatus = "worker_ready"
+	TaskStatusPending  TaskStatus = "pending"
+	TaskStatusFailed   TaskStatus = "failed"
+	TaskStatusInvalid  TaskStatus = "invalid"
 )
 
 type ObjWithTaskStatus struct {
