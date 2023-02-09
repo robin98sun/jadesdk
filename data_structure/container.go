@@ -12,6 +12,7 @@ type Container struct {
 	Protocol string      `json:"protocol,omitempty"`
 	Addr     string      `json:"addr,omitempty"`
 	Input    interface{} `json:"input,omitempty"`
+	ID       string   `json:"id,omitempty"`
 }
 
 func (c *Container) valid() bool {
@@ -44,4 +45,15 @@ func (c *Container) SetISAInImage(isa string) {
 	}
 	new_image += isa
 	c.Image = new_image
+}
+
+func (c *Container) Copy() *Container {
+	return &Container{
+		Image: c.Image,
+		Port: c.Port,
+		Protocol: c.Protocol,
+		Addr: c.Addr,
+		Input: c.Input,
+		ID: c.ID,
+	}
 }

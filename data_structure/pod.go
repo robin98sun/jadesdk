@@ -17,6 +17,7 @@ type Pod struct {
 	AppKey     string          `json:"appId,omitempty"`
 	Container  *Container      `json:"container,omitempty"`
 	ModuleName string          `json:"moduleName,omitempty"`
+	UID        string		   `json:"uid,omitempty"`
 	Key        string          `json:"id,omitempty"`
 }
 
