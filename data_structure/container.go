@@ -12,7 +12,8 @@ type Container struct {
 	Protocol string      `json:"protocol,omitempty"`
 	Addr     string      `json:"addr,omitempty"`
 	Input    interface{} `json:"input,omitempty"`
-	ID       string   `json:"id,omitempty"`
+	ID       string   	 `json:"id,omitempty"`
+	CgroupPath string    `json:"cgroupPath,omitempty"`
 }
 
 func (c *Container) valid() bool {
