@@ -139,31 +139,40 @@ func (j *JadeSDK) ModuleCount() int {
 	return len(j.WorkerModules) + len(j.AggregatorModules)
 }
 
-func (j *JadeSDK) UpdateAPIs() {
+func (j *JadeSDK) UpdateAPIs(capabilities []*ds.Capability) {
 	if j == nil {
 		return
 	}
-	if j.Conf != nil && j.Conf.MasterNode != nil {
-		j.log.Printf("the master node protocol: %v, addr: %v, port: %v",
-			j.Conf.MasterNode.Protocol,
-			j.Conf.MasterNode.Addr,
-			j.Conf.MasterNode.Port,
-		)
-	}
 
-	if j.Conf != nil && j.Conf.SelfNode != nil {
-		j.log.Printf("this node protocol: %v, addr: %v, port: %v",
-			j.Conf.SelfNode.Protocol,
-			j.Conf.SelfNode.Addr,
-			j.Conf.SelfNode.Port,
-		)
-	}
+	caplist := capabilities
+	if len(caplist) == 0 {
+		
+		if j.Conf != nil && j.Conf.MasterNode != nil {
+			j.log.Printf("the master node protocol: %v, addr: %v, port: %v",
+				j.Conf.MasterNode.Protocol,
+				j.Conf.MasterNode.Addr,
+				j.Conf.MasterNode.Port,
+			)
+		}
 
+		if j.Conf != nil && j.Conf.SelfNode != nil {
+			j.log.Printf("this node protocol: %v, addr: %v, port: %v",
+				j.Conf.SelfNode.Protocol,
+				j.Conf.SelfNode.Addr,
+				j.Conf.SelfNode.Port,
+			)
+		}
+
+		if j.Conf != nil && j.Conf.Capabilities != nil && len(j.Conf.Capabilities) > 0 {
+			caplist = j.Conf.Capabilities
+		}
+	}
+	
 	var metricsEnvApi *ds.Capability
-	if j.Conf != nil && j.Conf.Capabilities != nil && len(j.Conf.Capabilities) > 0 {
+	if len(caplist) > 0 {
 		// log & inspect the capabilities (APIs)
 		// prepare APIs
-		for i, cap := range j.Conf.Capabilities {
+		for i, cap := range caplist {
 			j.log.Printf("capability[%v] name: %v, value: %v, api: %v, type: %v, action: %v, url: %v", 
 				i, cap.Name, cap.Value, cap.API, cap.Type, cap.Action, cap.URL,
 			)

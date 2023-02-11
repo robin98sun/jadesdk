@@ -33,6 +33,8 @@ func NewAddons() *Addons {
 }
 
 func (a *Addons) GetMetricsEnv() *MetricsEnv {
+	a.Lock()
+	defer a.Unlock()
 	return a.MetricsEnvData
 }
 

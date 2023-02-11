@@ -42,7 +42,7 @@ func (j *JadeSDK) ReadConfFromEnv() *SDKConf {
 	}
 	conf.Capabilities = all_capabilities
 	j.Conf = conf
-	j.UpdateAPIs()
+	j.UpdateAPIs(nil)
 	return conf
 }
 
