@@ -26,6 +26,18 @@ type AllocationUnit struct {
 	MaximumCapacity *Capacity `json:"maximumCapacity,omitempty"`
 }
 
+func (a *AllocationUnit) GetAvgCPUCores() float64 {
+	minCap := int64(0)
+	maxCap := int64(0)
+	if a.MinimumCapacity != nil {
+		minCap = a.MinimumCapacity.CPU
+	}
+	if a.MaximumCapacity != nil {
+		maxCap = a.MaximumCapacity.CPU
+	}
+	return float64(minCap+maxCap)/float64(2000)
+}
+
 func (a *AllocationUnit) Describe() string {
 	if a == nil {
 		return "nil"
