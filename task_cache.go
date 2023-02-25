@@ -69,24 +69,26 @@ func (q *AggregativeTaskCache) EnqueueAggregativeTask(msg *AggregatorEnqueuingMe
 	}
 }
 
-func (q *AggregativeTaskCache) IsTaskDone(taskKey string) bool {
+func (q *AggregativeTaskCache) IsTaskDone(taskKey string) []string {
+	var unfinished []string = nil
 	if q == nil || len(q.Cache) == 0 {
-		return false
+		return unfinished
 	}
 	q.Lock()
 	defer q.Unlock()
 	if cacheItem, e := q.Cache[taskKey]; !e {
-		return false
+		return unfinished
 	} else if len(cacheItem.Subtasks) == 0 {
-		return false
+		return unfinished
 	} else {
+		unfinished = []string{}
 		for _, subtaskItem := range cacheItem.Subtasks {
 			if subtaskItem.Result == nil {
-				return false
+				unfinished = append(unfinished, subtaskItem.SubtaskKey)
 			}
 		}
 	}
-	return true
+	return unfinished
 }
 
 func (q *AggregativeTaskCache) DoesSubtaskExist(taskKey string, subtaskKey string) bool {

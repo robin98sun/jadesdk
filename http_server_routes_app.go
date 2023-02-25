@@ -130,16 +130,23 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 			j.Stats[moduleName].ExecutionTime.AddDuration(executionDuration)
 			oneOffStatItem.Execution = executionDuration
 			j.log.Println(fmt.Sprintf("[%v] done in %v milliseconds", moduleName, executionDuration/time.Millisecond))
-			if moduleType == AppModuleAggregator && !j.AggregativeTaskCache.IsTaskDone(req.Task.TaskID) {
-				j.log.Printf("[%v] still waiting for more subtasks of task[%v]", moduleName, req.Task.TaskID)
-				return
-			} else if moduleType == AppModuleAggregator {
-				j.log.Printf("[%v] all subtasks of task[%v] is done", moduleName, req.Task.TaskID)
-				taskArrivalTime := j.AggregativeTaskCache.GetArrivalTime(req.Task.TaskID)
-				oneOffStatItem.Service = timeExecuted.Sub(taskArrivalTime)
-				j.Stats[moduleName].Service.AddDuration(oneOffStatItem.Service)
-				oneOffStatItem.Execution = j.AggregativeTaskCache.GetCumulativeExecutionTime(req.Task.TaskID)
-				oneOffStatItem.PreService = j.AggregativeTaskCache.GetCumulativePreServiceTime(req.Task.TaskID)
+			
+			if moduleType == AppModuleAggregator {
+				unfinishedSubtasks := j.AggregativeTaskCache.IsTaskDone(req.Task.TaskID)
+				if len(unfinishedSubtasks) > 0 {
+					j.log.Printf("[%v] still waiting for %v subtasks of task[%v]", moduleName, len(unfinishedSubtasks), req.Task.TaskID)
+					for i, ufst := range unfinishedSubtasks {
+						j.log.Printf("    [%v] waiting for %i-th subtask [%v]", moduleName, i+1, ufst)
+					}
+					return
+				} else if moduleType == AppModuleAggregator {
+					j.log.Printf("[%v] all subtasks of task[%v] is done", moduleName, req.Task.TaskID)
+					taskArrivalTime := j.AggregativeTaskCache.GetArrivalTime(req.Task.TaskID)
+					oneOffStatItem.Service = timeExecuted.Sub(taskArrivalTime)
+					j.Stats[moduleName].Service.AddDuration(oneOffStatItem.Service)
+					oneOffStatItem.Execution = j.AggregativeTaskCache.GetCumulativeExecutionTime(req.Task.TaskID)
+					oneOffStatItem.PreService = j.AggregativeTaskCache.GetCumulativePreServiceTime(req.Task.TaskID)
+				}
 			} else if moduleType == AppModuleWorker {
 				j.Stats[moduleName].Service.AddDuration(executionDuration)
 				oneOffStatItem.Service = oneOffStatItem.Execution
@@ -249,8 +256,11 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 					j.log.Printf("WARNING[%v]: task is nil when trying to clean task by TaskID", i)
 					continue
 				}
-				if moduleType == AppModuleAggregator && j.AggregativeTaskCache.IsTaskDone(task.TaskID) {
-					j.AggregativeTaskCache.CleanTask(task.TaskID)
+				if moduleType == AppModuleAggregator {
+					unfinishedSubtasks := j.AggregativeTaskCache.IsTaskDone(task.TaskID) 
+					if len(unfinishedSubtasks) == 0 {
+						j.AggregativeTaskCache.CleanTask(task.TaskID)
+					}
 				}
 				break
 			}
