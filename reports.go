@@ -35,14 +35,14 @@ func (j *JadeSDK) reportToMaster(task *SDKTask, updates *Response, doneOrFail bo
 		msg.Status = "failed"
 	}
 
-	return j.SendReportMessageToJadelet(j.Conf.MasterNode, msg)
+	return j.SendReportMessageToJadelet(task.TaskID, j.Conf.MasterNode, msg)
 	
 }
 
-func (j *JadeSDK) SendReportMessageToJadelet(node *ds.Node, msg *ReportMessage) (interface{}, int, error) {
+func (j *JadeSDK) SendReportMessageToJadelet(taskKey string, node *ds.Node, msg *ReportMessage) (interface{}, int, error) {
 	j.log.Println("reporting to master:", msg)
 	res, reqlen, _, err := j.HTTPCommunicate(
-		"report to master", "http", "put",
+		"report to master for subtask["+taskKey+"]", "http", "put",
 		"/$jade$/app/listener", node, msg,
 		0, 10,
 	)
