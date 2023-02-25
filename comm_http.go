@@ -94,7 +94,7 @@ func (j *JadeSDK) HTTPCommunicate(
 	// json.NewDecoder(res.Body).Decode(&resMsg)
 	content, err := DecodeRequestWithoutClosing(res, resMsg)
 	if err != nil {
-		msg := fmt.Sprintf("can not decode response body: %v", err)
+		msg := fmt.Sprintf("can not decode response body: %v, where response body is %v", err, res.Body)
 		return j.retryHTTPCommunication(operationName, protocol, method, path, targetNode, payload, msg, retryInterval, retryCnt+1, retryLimitation)
 	} else if resMsg.Error != "" {
 		msg := fmt.Sprintf("target node responded ERROR message: %v", resMsg.Error)

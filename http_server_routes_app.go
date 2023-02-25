@@ -215,9 +215,9 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 								Payload: result,
 							}, true, oneOffStatItem)
 							if errReportToMaster == nil {
-								j.log.Println(fmt.Sprintf("[%v] response from the master: %v"), moduleName, resReportToMaster)
+								j.log.Println(fmt.Sprintf("[%v] response from the master: %v", moduleName, resReportToMaster))
 							} else {
-								j.log.Println(fmt.Sprintf("[%v] error of report to master: %v"), moduleName, errReportToMaster)
+								j.log.Println(fmt.Sprintf("[%v] error of report to master: %v", moduleName, errReportToMaster))
 							}
 							break
 						}
