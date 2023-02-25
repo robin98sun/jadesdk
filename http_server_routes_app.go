@@ -136,7 +136,7 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 				if len(unfinishedSubtasks) > 0 {
 					j.log.Printf("[%v] still waiting for %v subtasks of task[%v]", moduleName, len(unfinishedSubtasks), req.Task.TaskID)
 					for i, ufst := range unfinishedSubtasks {
-						j.log.Printf("    [%v] waiting for %i-th subtask [%v]", moduleName, i+1, ufst)
+						j.log.Printf("    [%v] waiting for %v-th subtask [%v]", moduleName, i+1, ufst)
 					}
 					return
 				} else if moduleType == AppModuleAggregator {
