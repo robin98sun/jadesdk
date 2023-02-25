@@ -210,10 +210,15 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 								j.log.Printf("WARNING[%v]: task is nil when trying to report to the master", i)
 								continue
 							}
-							j.reportToMaster(task, &Response{
+							resReportToMaster, _, errReportToMaster := j.reportToMaster(task, &Response{
 								Status:  "OK",
 								Payload: result,
 							}, true, oneOffStatItem)
+							if errReportToMaster == nil {
+								j.log.Println(fmt.Sprintf("[%v] response from the master: %v"), moduleName, resReportToMaster)
+							} else {
+								j.log.Println(fmt.Sprintf("[%v] error of report to master: %v"), moduleName, errReportToMaster)
+							}
 							break
 						}
 						
@@ -228,6 +233,7 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 							Status:  "error when sending messages",
 							Payload: result,
 						}, true, oneOffStatItem)
+
 					}
 					timeReportedToMaster := time.Now()
 					reportingDuration := timeReportedToMaster.Sub(timePoint)
