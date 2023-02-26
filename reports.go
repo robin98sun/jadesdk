@@ -4,6 +4,7 @@ import (
 	// "encoding/json"
 	"errors"
 	ds "uta.edu/aces/jadesdk/data_structure"
+	"fmt"
 )
 
 type ReportMessage struct {
@@ -42,14 +43,14 @@ func (j *JadeSDK) reportToMaster(task *SDKTask, updates *Response, doneOrFail bo
 func (j *JadeSDK) SendReportMessageToJadelet(taskKey string, node *ds.Node, msg *ReportMessage) (interface{}, int, error) {
 	j.log.Println("reporting to master:", msg)
 	res, reqlen, _, err := j.HTTPCommunicate(
-		"report to master for subtask["+taskKey+"]", "http", "put",
+		"report to master for task["+taskKey+"]", "http", "put",
 		"/$jade$/app/listener", node, msg,
 		0, 10,
 	)
 	if err != nil {
-		j.log.Println("error when reporting to master:", err.Error())
+		j.log.Println(fmt.Printf("error when reporting task[%v] to master: %v", taskKey, err.Error()))
 	} else {
-		j.log.Println("reported, master response:", res)
+		j.log.Println(fmt.Printf("reported task[%v], master response: %v", taskKey, res))
 	}
 	return res, reqlen, err
 }
