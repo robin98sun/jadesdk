@@ -25,6 +25,7 @@ type AggregatorEnqueuingMessage struct {
 	ModuleName string       `json:"moduleName,omitempty"`
 	Subtasks   []string     `json:"subtasks,omitempty"`
 	ReportTo   []*Interface `json:"reportTo,omitempty"`
+	SLO        *ds.TaskDispatchingItemSLO `json:"slo,omitempty"`
 }
 
 // Response message respond to the request

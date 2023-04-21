@@ -3,6 +3,7 @@ package jadesdk
 import (
 	"sync"
 	"time"
+	ds "uta.edu/aces/jadesdk/data_structure"
 )
 
 type AggregativeTaskCache struct {
@@ -30,10 +31,12 @@ type AggregativeTaskCacheItem struct {
 	Cumulation interface{}                                 // cumulative Result of so far responded subtasks
 	ReportTo   []*Interface                                // upper layer aggregators
 	SubtaskKey string                                      // the id of the aggregator subtask
+	SLO 		*ds.TaskDispatchingItemSLO
 	ModuleName string
 	ArrivalTime time.Time
 	CumulativeExcutionTime time.Duration
 	CumulativePreServiceTime time.Duration
+	CompletedSubtasks int
 }
 
 type AggregativeTaskCacheSubtaskItem struct {
@@ -57,6 +60,7 @@ func (q *AggregativeTaskCache) EnqueueAggregativeTask(msg *AggregatorEnqueuingMe
 			Subtasks:   make(map[string]*AggregativeTaskCacheSubtaskItem),
 			ReportTo:   msg.ReportTo,
 			SubtaskKey: msg.SubtaskKey,
+			SLO:        msg.SLO,
 			ModuleName: msg.ModuleName,
 			ArrivalTime: time.Now(),
 		}
@@ -69,7 +73,7 @@ func (q *AggregativeTaskCache) EnqueueAggregativeTask(msg *AggregatorEnqueuingMe
 	}
 }
 
-func (q *AggregativeTaskCache) IsTaskDone(taskKey string) []string {
+func (q *AggregativeTaskCache) GetUnfinishedSubtasks(taskKey string) []string {
 	var unfinished []string = nil
 	if q == nil || len(q.Cache) == 0 {
 		return unfinished
@@ -80,6 +84,8 @@ func (q *AggregativeTaskCache) IsTaskDone(taskKey string) []string {
 		return unfinished
 	} else if len(cacheItem.Subtasks) == 0 {
 		return unfinished
+	} else if cacheItem.SLO != nil && cacheItem.SLO.TailCuttingPercentage > 0 && (float64(1)-cacheItem.SLO.TailCuttingPercentage)*float64(len(cacheItem.Subtasks)) <= float64(cacheItem.CompletedSubtasks) {
+		return unfinished
 	} else {
 		unfinished = []string{}
 		for _, subtaskItem := range cacheItem.Subtasks {
@@ -89,6 +95,14 @@ func (q *AggregativeTaskCache) IsTaskDone(taskKey string) []string {
 		}
 	}
 	return unfinished
+}
+
+func (q *AggregativeTaskCache) IsTaskDone(taskKey string) bool {
+	unfinished := q.GetUnfinishedSubtasks(taskKey)
+	if len(unfinished) == 0 {
+		return true
+	}
+	return false
 }
 
 func (q *AggregativeTaskCache) DoesSubtaskExist(taskKey string, subtaskKey string) bool {
@@ -108,6 +122,8 @@ func (q *AggregativeTaskCache) DoesSubtaskExist(taskKey string, subtaskKey strin
 
 	return false
 }
+
+
 
 func (q *AggregativeTaskCache) GetCumulation(taskKey string) (interface{}, []interface{}) {
 	if q == nil || len(q.Cache) == 0 {
@@ -210,6 +226,7 @@ func (q *AggregativeTaskCache) SetSubtaskResult(taskKey string, subtaskKey strin
 	if cacheItem, e := q.Cache[taskKey]; e {
 		if subtaskItem, e := cacheItem.Subtasks[subtaskKey]; e {
 			subtaskItem.Result = result
+			cacheItem.CompletedSubtasks++
 		}
 	}
 }

@@ -85,7 +85,8 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 				}
 			} else if moduleType == AppModuleAggregator {
 				j.log.Printf("checking subtask[%v] of task[%v] in cache", req.Task.SubtaskID, req.Task.TaskID)
-				if j.AggregativeTaskCache.DoesSubtaskExist(req.Task.TaskID, req.Task.SubtaskID) {
+				if j.AggregativeTaskCache.DoesSubtaskExist(req.Task.TaskID, req.Task.SubtaskID) && !j.AggregativeTaskCache.IsTaskDone(req.Task.TaskID){
+
 					j.AggregativeTaskCache.SetSubtaskPreServiceTime(req.Task.TaskID, req.Task.SubtaskID, preServiceTimeDuration)
 					j.log.Printf("received the result of subtask [%v] of task[%v]", req.Task.SubtaskID, req.Task.TaskID)
 					cumulation, previousResults := j.AggregativeTaskCache.GetCumulation(req.Task.TaskID)
@@ -132,7 +133,7 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 			j.log.Println(fmt.Sprintf("[%v] done in %v milliseconds", moduleName, executionDuration/time.Millisecond))
 			
 			if moduleType == AppModuleAggregator {
-				unfinishedSubtasks := j.AggregativeTaskCache.IsTaskDone(req.Task.TaskID)
+				unfinishedSubtasks := j.AggregativeTaskCache.GetUnfinishedSubtasks(req.Task.TaskID)
 				if len(unfinishedSubtasks) > 0 {
 					j.log.Printf("[%v] still waiting for %v subtasks of task[%v]", moduleName, len(unfinishedSubtasks), req.Task.TaskID)
 					for i, ufst := range unfinishedSubtasks {
@@ -257,8 +258,7 @@ func (j *JadeSDK) createHTTPHandler(moduleName string, moduleInst interface{}, m
 					continue
 				}
 				if moduleType == AppModuleAggregator {
-					unfinishedSubtasks := j.AggregativeTaskCache.IsTaskDone(task.TaskID) 
-					if len(unfinishedSubtasks) == 0 {
+					if j.AggregativeTaskCache.IsTaskDone(task.TaskID)  {
 						j.AggregativeTaskCache.CleanTask(task.TaskID)
 					}
 				}

@@ -94,6 +94,14 @@ func (t *TaskDispatchingItem) GetTailLatencySLOInMilliseconds() float64 {
 	return slo
 }
 
+func (t *TaskDispatchingItem) GetTailCuttingPercentage() float64 {
+	if t.SLO != nil {
+		return t.SLO.TailCuttingPercentage
+	}
+
+	return 0
+}
+
 // generate category tag of a task (query) at this tier
 func (t *TaskDispatchingItem) GenTag() string {
 	tag := t.Task.Application.Key()
@@ -260,6 +268,7 @@ type TaskDispatchingItemBudget struct {
 
 type TaskDispatchingItemSLO struct {
 	TailLatencyInMilliseconds float64 `json:"tailLatencyInMilliseconds,omitempty"`
+	TailCuttingPercentage float64 `json:"tailCuttingPercentage,omitempty"`
 }
 
 func (t *TaskDispatchingItem) SetReportToForModule(moduleName string, node *Node, pod *Pod) {
